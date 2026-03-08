@@ -13,7 +13,8 @@
  */
 
 /* eslint-disable no-console */
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 import { callPrimaryLLM } from "./call-primary";
 import { callFastLLM } from "./call-fast";
 
