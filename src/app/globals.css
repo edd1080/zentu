@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* ============================================
+   AGENTI Design System Tokens
+   Fuente: docs/ui-spec.md v1.0
+   ============================================ */
+
+:root {
+  /* --- Colores de identidad --- */
+  --color-primary-900: #0D3B2E;
+  --color-primary-800: #145C45;
+  --color-primary-700: #1A7A5C;
+  --color-primary-600: #22A075;
+  --color-primary-100: #E8F7F2;
+  --color-primary-50: #F2FBF7;
+
+  /* --- Acento ámbar --- */
+  --color-accent-700: #B45309;
+  --color-accent-500: #F59E0B;
+  --color-accent-100: #FEF3C7;
+
+  /* --- Colores funcionales --- */
+  --color-success-700: #15803D;
+  --color-success-500: #22C55E;
+  --color-success-100: #DCFCE7;
+
+  --color-warning-700: #B45309;
+  --color-warning-500: #F59E0B;
+  --color-warning-100: #FEF3C7;
+
+  --color-error-700: #B91C1C;
+  --color-error-500: #EF4444;
+  --color-error-100: #FEE2E2;
+
+  --color-info-700: #1D4ED8;
+  --color-info-500: #3B82F6;
+  --color-info-100: #DBEAFE;
+
+  /* --- Superficies --- */
+  --surface-background: #FAFAF9;
+  --surface-card: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --surface-muted: #F5F5F4;
+  --surface-border: #E7E5E4;
+  --surface-border-strong: #D6D3D1;
+
+  /* --- Texto --- */
+  --text-primary: #1C1917;
+  --text-secondary: #78716C;
+  --text-tertiary: #A8A29E;
+  --text-inverse: #FAFAF9;
+  --text-disabled: #D6D3D1;
+
+  /* --- Tipografía --- */
+  --font-display: var(--font-instrument-serif), Georgia, serif;
+  --font-ui: var(--font-geist-sans), -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  /* --- Escala tipográfica (Major Third 1.25) --- */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+
+  /* --- Espaciado (base 4px) --- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* --- Radii --- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* --- Sombras --- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* --- Transiciones (MVP: solo 200ms ease) --- */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+}
+
+/* --- Tailwind theme integration --- */
+@theme inline {
+  --color-background: var(--surface-background);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-instrument-serif);
+
+  --color-primary: var(--color-primary-700);
+  --color-primary-dark: var(--color-primary-800);
+  --color-primary-light: var(--color-primary-100);
+  --color-accent: var(--color-accent-500);
+  --color-success: var(--color-success-500);
+  --color-warning: var(--color-warning-500);
+  --color-error: var(--color-error-500);
+  --color-info: var(--color-info-500);
+}
+
+/* --- Base styles --- */
+body {
+  background-color: var(--surface-background);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+}
+
+/* --- Scrollbar minimal --- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-border-strong) transparent;
+}
+
+/* --- Focus visible para accesibilidad --- */
+*:focus-visible {
+  outline: 2px solid var(--color-primary-700);
+  outline-offset: 2px;
+}
