@@ -56,6 +56,12 @@ trigger: always_on
 - ❌ NUNCA cachear el Bloque 5 del prompt (historial de conversación).
   - ✅ Bloques 1-4 se cachean por `business_id`. Bloque 5 siempre real-time.
 
+## Config / Env vars
+
+- ❌ NUNCA usar `import "dotenv/config"` para cargar variables de entorno en proyectos Next.js.
+  - ✅ Usar `dotenv.config({ path: ".env.local" })` — Next.js usa `.env.local` para secretos, no `.env`.
+  - 📅 2026-03-09 | El smoke test no cargaba las API keys porque dotenv buscaba `.env` por defecto.
+
 ## TypeScript
 
 - ❌ NUNCA usar `any`, `@ts-ignore` o `as unknown as X`.
