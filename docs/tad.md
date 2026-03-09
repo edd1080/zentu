@@ -220,7 +220,7 @@ No hay una tabla de "versiones" separada en el MVP. La trazabilidad completa se 
 
 ## Decisión 3 — Estrategia de LLM y abstracción de proveedor
 
-**Decisión:** Dos modelos con routing por tipo de tarea. Proveedor principal Gemini Flash 2.5. Modelo fast/cheap Qwen2.5-72B. Abstracción de proveedor desde el día 1.
+**Decisión:** Dos modelos con routing por tipo de tarea. Proveedor principal Gemini Flash 2.5. Modelo fast/cheap Qwen2.5-72B via OpenRouter. Abstracción de proveedor desde el día 1.
 
 ### 3.1 Asignación de tareas por modelo
 
@@ -230,7 +230,7 @@ No hay una tabla de "versiones" separada en el MVP. La trazabilidad completa se 
 - Extracción de conocimiento desde texto libre, voz transcrita o imágenes OCR
 - Resumen de primera semana (requiere síntesis de calidad)
 
-**Modelo fast/cheap — Qwen2.5-72B via Together.ai:**
+**Modelo fast/cheap — Qwen2.5-72B via OpenRouter:**
 - Clasificación de intención (`detected_intent`)
 - Generación del label en español (`detected_intent_label`)
 - Resúmenes diarios (estructura fija, no requiere creatividad)
@@ -257,7 +257,9 @@ La abstracción expone dos funciones principales:
 
 Internamente, cada función apunta a un proveedor configurado por variable de entorno. Para cambiar de Gemini a Claude Haiku o a GPT-4o mini, se cambia la variable de entorno y el adaptador interno. La lógica de negocio no cambia.
 
-Los adaptadores de proveedor son el único lugar donde vive el código específico de cada API. Un adaptador para Gemini, uno para Together.ai/Qwen, y stubs preparados para Claude y OpenAI cuando se necesiten.
+Los adaptadores de proveedor son el único lugar donde vive el código específico de cada API. Un adaptador para Gemini, uno para OpenRouter (Qwen), uno para Together.ai (respaldo), y stubs preparados para Claude y OpenAI cuando se necesiten.
+
+> **Nota (Bloque 1.3, 2026-03-09):** Together.ai fue reemplazado por OpenRouter como proveedor fast. Razón: Together.ai no permitía agregar fondos a la cuenta. OpenRouter ofrece el mismo modelo (Qwen2.5-72B-Instruct) con latencia demostrada de 408ms en JSON mode, dentro del presupuesto de 500ms para clasificación. El adapter de Together.ai se mantiene como opción futura.
 
 ### 3.3 Variables de entorno del sistema LLM
 
@@ -266,11 +268,11 @@ LLM_PRIMARY_PROVIDER=gemini
 LLM_PRIMARY_MODEL=gemini-2.5-flash
 LLM_PRIMARY_API_KEY=[key]
 
-LLM_FAST_PROVIDER=together
-LLM_FAST_MODEL=Qwen/Qwen2.5-72B-Instruct-Turbo
+LLM_FAST_PROVIDER=openrouter
+LLM_FAST_MODEL=qwen/qwen-2.5-72b-instruct
 LLM_FAST_API_KEY=[key]
 
-LLM_PRIMARY_MAX_TOKENS=500
+LLM_PRIMARY_MAX_TOKENS=600
 LLM_FAST_MAX_TOKENS=200
 LLM_PRIMARY_TEMPERATURE=0.3
 LLM_FAST_TEMPERATURE=0.1
