@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       agents: {
@@ -867,7 +892,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_owner_exists: { Args: { p_auth_id: string }; Returns: boolean }
+      create_owner_with_business: {
+        Args: {
+          p_auth_id: string
+          p_email: string
+          p_full_name: string
+          p_phone_personal?: string
+        }
+        Returns: Json
+      }
       get_business_id: { Args: never; Returns: string }
+      verify_owner_phone: { Args: never; Returns: undefined }
     }
     Enums: {
       agent_mode: "collaborator" | "autonomous_partial" | "autonomous_full"
@@ -1074,6 +1110,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       agent_mode: ["collaborator", "autonomous_partial", "autonomous_full"],
