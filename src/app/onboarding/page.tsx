@@ -1,10 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-/**
- * Onboarding placeholder — protected route.
- * Will be replaced in Bloque 2.2 with the real M1.2 flow.
- */
 export default async function OnboardingPage() {
   const supabase = await createClient();
 
@@ -16,23 +12,31 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
-  return (
-    <div
-      className="flex min-h-screen flex-col items-center justify-center gap-4 p-8"
-      style={{ backgroundColor: "var(--surface-background)" }}
-    >
-      <h1
-        className="text-2xl font-bold"
-        style={{ color: "var(--text-primary)" }}
-      >
-        Onboarding
-      </h1>
-      <p
-        className="text-center"
-        style={{ color: "var(--text-secondary)" }}
-      >
-        Flujo de onboarding se implementa en Bloque 2.2.
-      </p>
-    </div>
-  );
+  // Get current step
+  const { data: business } = await supabase
+    .from("businesses")
+    .select("onboarding_progress (current_step)")
+    .eq("owner_id", user.id)
+    .single();
+
+  const progress = business?.onboarding_progress?.[0];
+  const currentStep = progress?.current_step || "industry";
+
+  // Map step to route
+  switch (currentStep) {
+    case "industry":
+      redirect("/onboarding/industry");
+    case "knowledge":
+      redirect("/onboarding/knowledge");
+    case "escalation_rules":
+      redirect("/onboarding/escalation-rules");
+    case "whatsapp":
+      redirect("/onboarding/whatsapp");
+    case "test":
+      redirect("/onboarding/test");
+    case "complete":
+    case "activation":
+    default:
+      redirect("/dashboard");
+  }
 }

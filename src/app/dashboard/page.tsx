@@ -27,6 +27,17 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Check onboarding progress
+  const { data: progress } = await supabase
+    .from("onboarding_progress")
+    .select("completed_at")
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!progress || !progress.completed_at) {
+    redirect("/onboarding");
+  }
+
   return (
     <div
       className="flex min-h-screen flex-col items-center justify-center gap-4 p-8"
