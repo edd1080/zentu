@@ -9,7 +9,7 @@
 // Provider & Config
 // ---------------------------------------------------------------------------
 
-export type LLMProviderName = "gemini" | "together";
+export type LLMProviderName = "gemini" | "together" | "openrouter";
 
 export interface LLMConfig {
   provider: LLMProviderName;

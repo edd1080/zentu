@@ -19,8 +19,8 @@ const DEFAULTS = {
     temperature: 0.3,
   },
   fast: {
-    provider: "together" as LLMProviderName,
-    model: "Qwen/Qwen2.5-72B-Instruct-Turbo",
+    provider: "openrouter" as LLMProviderName,
+    model: "qwen/qwen-2.5-72b-instruct",
     maxTokens: 200,
     temperature: 0.1,
   },
@@ -44,9 +44,11 @@ export const RETRY_DELAY_MS = 1_000;
 // ---------------------------------------------------------------------------
 
 function parseProvider(value: string | undefined): LLMProviderName {
-  if (value === "gemini" || value === "together") return value;
+  if (value === "gemini" || value === "together" || value === "openrouter") {
+    return value;
+  }
   throw new Error(
-    `Invalid LLM provider: "${value}". Expected "gemini" or "together".`,
+    `Invalid LLM provider: "${value}". Expected "gemini", "together" or "openrouter".`,
   );
 }
 
