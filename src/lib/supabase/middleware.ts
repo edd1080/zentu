@@ -38,8 +38,7 @@ export async function updateSession(request: NextRequest) {
   // Auth pages — redirect to dashboard if already logged in
   const isAuthPage =
     pathname === "/login" ||
-    pathname === "/register" ||
-    pathname === "/verify-phone";
+    pathname === "/register";
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
@@ -50,7 +49,8 @@ export async function updateSession(request: NextRequest) {
   // Protected routes — redirect to login if not authenticated
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/onboarding");
+    pathname.startsWith("/onboarding") ||
+    pathname === "/verify-phone";
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();

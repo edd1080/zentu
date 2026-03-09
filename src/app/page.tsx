@@ -37,7 +37,7 @@ export default function Home() {
         Setup completo
       </p>
 
-      <div className="mt-4 flex flex-col gap-2 text-sm">
+      <div className="mt-4 flex flex-col gap-2 text-sm z-10 relative">
         <VerifyItem label="Next.js + App Router" />
         <VerifyItem label="TypeScript" />
         <VerifyItem label="Tailwind CSS" />
@@ -45,6 +45,26 @@ export default function Home() {
         <VerifyItem label="Instrument Serif (display)" />
         <VerifyItem label="Lucide Icons" />
         <VerifyItem label="Design tokens cargados" />
+      </div>
+
+      <div className="mt-8 flex gap-4 z-10 relative">
+        <a
+          href="/login"
+          className="rounded-md bg-white/5 px-6 py-2.5 text-sm font-medium border border-[var(--border-subtle)] hover:bg-white/10 transition-colors"
+          style={{ color: "var(--text-primary)" }}
+        >
+          Iniciar Sesión
+        </a>
+        <a
+          href="/register"
+          className="rounded-md px-6 py-2.5 text-sm font-medium transition-colors hover:opacity-90"
+          style={{
+            backgroundColor: "var(--color-primary-600)",
+            color: "white",
+          }}
+        >
+          Registrarse
+        </a>
       </div>
     </div>
   );
