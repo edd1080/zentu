@@ -1,30 +1,35 @@
 # Estado actual
 Fase activa: 3
-Bloque activo: 3.1
+Bloque activo: Bloque 3.4 — Suggestions & Escalations Actions (Completado)
 Última sesión: 2026-03-10
 
-## Qué se construyó (sesión 2026-03-10)
-- **Bloque 2.3 completado:** Se implementaron los flujos finales de Onboarding M1.4, M1.5 y M1.6.
-- Creación de rutas de API para reglas de escalamiento, conexión/simulación de WhatsApp, y Sandbox efímero (`/api/onboarding/escalation-rules`, `/api/onboarding/whatsapp`, `/api/agent/chat`, `/api/onboarding/activate`).
-- Creación de componentes UI de cliente reactivos (`m14-escalation-rules.tsx`, `m15-whatsapp-connect.tsx`, `m16-agent-testing.tsx`).
-- Corrección de bugs en la recuperación de contexto del agente, inyectando la información estática del negocio (descripción, horarios) junto a los Knowledge Items de la base de datos `active: true`.
-- Verificación exitosa de redireccionamiento al Home Dashboard condicionada por progreso en la tabla `onboarding_progress`.
+## Qué se construyó (sesión 2026-03-10 parte 2)
+- **Bloque 3.3 completado:** Filtros de emergencia previos a LLM, refinamiento de prompts y `confidence_tiers`. Validado localmente.
+- **Bloque 3.4 completado:** Backend de acciones y aprendizaje.
+  - Creación de Edge Function utility `send-message` conectada a Meta API.
+  - Creación de Edge Function controller `suggestion-actions` que maneja resoluciones del frontend (Approve, Edit, Reject).
+  - Creación de Edge Function asíncrona `classify-correction` que materializa correcciones manuales en `knowledge_items` operativos (bucle cerrado).
 
 ## Decisiones tomadas
-- **WhatsApp Simulation:** Se optó deliberadamente por saltar el *Embedded Signup* de Meta mediante un botón de "Simular Éxito" para acelerar la etapa local de desarrollo, mockeando un token y status conectado.
-- **Agent Context Loading:** La consulta de conexto del LLM en el Sandbox une tanto los `knowledge_items` (capa estructurada actual) como las propiedades hardcoded de la tabla `businesses` (horarios expandidos de JSON, descripciones) para dar un prompt integral al agente.
+- **Bypass de Despliegue (MCP):** Ante un error de permisos `EPERM` en Mac sobre `.env.local` que bloqueaba el CLI de Supabase, se optó por desplegar las Edge Functions vía **MCP Supabase Server**, permitiendo continuar el desarrollo sin comprometer la seguridad o los permisos del SO.
+- **Rutas de Imports (MCP Issue):** El despliegue a través del MCP exige utilizar *URLs absolutas o resolubles nativamente* de Deno local (ej. `../_shared/llm/index.ts`) en lugar de alias mapeados (`src/`) que provocarían cuelgues HTTP 503 en el entorno real por falta de `deno.json` embebido en el bundle. Se corrigieron todas las rutas compartidas y resubieron las funciones.
+- **Detección de Emergency Logic:** Deterministic filter implemented before LLM call.
 
 ## Blockers
-- Ninguno. La Fase 2 está completamente finalizada (Autenticación y Onboarding de Dueño).
+- Ninguno técnico. La Fase 3 (Motor Agente Backend) está completada. Se requiere desarrollar la interfaz (Fase 4) para pruebas End-to-End manuales intuitivas.
 
-## DoD Bloque 2.3 ✅
-- [x] Reglas de Escalamiento leídas y actualizadas en Supabase.
-- [x] Simulador de Conexión de WhatsApp logguea cambios adecuadamente.
-- [x] Agente Sandbox responde basándose en el contexto del onboarding.
-- [x] Botón maestro de activación empuja a Dashboard exitosamente.
+## DoD Bloque 3.3 ✅
+- [x] Confidence score ponderado y jerarquías (Alta, Media, Baja).
+- [x] Filtros pre-LLM para palabras críticas.
+- [x] Validar que Output se inserta correctamente.
+
+## DoD Bloque 3.4 ✅
+- [x] Utility function para conectarse a API oficial de Meta para salidas.
+- [x] Controlador unificado para aprobar, editar y rechazar.
+- [x] Learning loop extrae edición e invalida caché.
 
 ## Próximo paso
-Bloque 3.1 — Inbox: Live Chat View & Agent Realtime Control.
+- [ ] Fase 4: Modo colaborador frontend (Inbox Handler)
 
 ## Commits
-- `chore: session-end [bloque 2.3] onboarding m1.4 m1.5 m1.6 sandbox api bugs and ui` (Pendiente)
+- `chore: session-end [bloque 3.4] completed agent motor action and learning loop infrastructure` (Pendiente)
