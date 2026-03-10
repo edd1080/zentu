@@ -27,11 +27,22 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Check onboarding progress
+  // Get business for the owner
+  const { data: business } = await supabase
+    .from("businesses")
+    .select("id")
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!business) {
+    redirect("/onboarding/industry");
+  }
+
+  // Check onboarding progress using business_id
   const { data: progress } = await supabase
     .from("onboarding_progress")
     .select("completed_at")
-    .eq("owner_id", user.id)
+    .eq("business_id", business.id)
     .single();
 
   if (!progress || !progress.completed_at) {

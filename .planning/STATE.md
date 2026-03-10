@@ -1,33 +1,30 @@
 # Estado actual
-Fase activa: 2
-Bloque activo: 2.3 (siguiente)
-Última sesión: 2026-03-09
+Fase activa: 3
+Bloque activo: 3.1
+Última sesión: 2026-03-10
 
-## Qué se construyó (sesión 2026-03-09)
-- **Bloque 2.2 completado:** Se implementó y pulió el flujo del onboarding M1.2 y M1.3.
-- Creación de rutas de API (`/api/onboarding/industry`, `/api/onboarding/knowledge`, `/api/onboarding/progress`, `/api/onboarding/voice`, `/api/onboarding/link`).
-- Creación de componentes de UI progresivos para captura de horarios, nombre/descripción, servicios y tono de marca (`m13-knowledge-capture.tsx` y subcomponentes).
-- UI Polish del scroll progresivo (smooth scroll nativo) y UX reactiva.
-- Adaptación de Gemini Flash Multimodal dentro de la capa `lib/llm` para transcribir audios de 30s al vuelo.
-- Inyección de migraciones remotas en vivo de Supabase vía MCP (Seed Industry Data, adición de columnas a `competency_topics` y casting de Textos a Enums).
-- Solución de routing bug en `middleware.ts` para redirigir siempre al dashboard o onboarding.
+## Qué se construyó (sesión 2026-03-10)
+- **Bloque 2.3 completado:** Se implementaron los flujos finales de Onboarding M1.4, M1.5 y M1.6.
+- Creación de rutas de API para reglas de escalamiento, conexión/simulación de WhatsApp, y Sandbox efímero (`/api/onboarding/escalation-rules`, `/api/onboarding/whatsapp`, `/api/agent/chat`, `/api/onboarding/activate`).
+- Creación de componentes UI de cliente reactivos (`m14-escalation-rules.tsx`, `m15-whatsapp-connect.tsx`, `m16-agent-testing.tsx`).
+- Corrección de bugs en la recuperación de contexto del agente, inyectando la información estática del negocio (descripción, horarios) junto a los Knowledge Items de la base de datos `active: true`.
+- Verificación exitosa de redireccionamiento al Home Dashboard condicionada por progreso en la tabla `onboarding_progress`.
 
 ## Decisiones tomadas
-- **SQL Data Typecasting en Cloud:** Tras enfrentar un error 500 crónico durante la inserción de las plantillas de industria (RPC), se modificó directamente el script en la BD vía Supabase MCP para aplicar casting implícito (`::public.industry_type`) en lugar del ORM de Node para mayor fidelidad a PostgreSQL.
-- **Formato Progresivo:** Todos los formularios de M1.3 existen en un solo route que revela dinámicamente bloques para aprovechar estados locales reáctivos sin recargas y mejorar la percepción de velocidad.
+- **WhatsApp Simulation:** Se optó deliberadamente por saltar el *Embedded Signup* de Meta mediante un botón de "Simular Éxito" para acelerar la etapa local de desarrollo, mockeando un token y status conectado.
+- **Agent Context Loading:** La consulta de conexto del LLM en el Sandbox une tanto los `knowledge_items` (capa estructurada actual) como las propiedades hardcoded de la tabla `businesses` (horarios expandidos de JSON, descripciones) para dar un prompt integral al agente.
 
 ## Blockers
-- Ninguno. Listos para empezar Bloque 2.3 (M1.4 - Escalation Rules).
+- Ninguno. La Fase 2 está completamente finalizada (Autenticación y Onboarding de Dueño).
 
-## DoD Bloque 2.2 ✅
-- [x] Seleccionar industria -> crea `CompetencyTopics` y `EscalationRules`.
-- [x] Campo libre M1.3 -> Crea un `KnowledgeItem`.
-- [x] Nota de voz -> Produce `KnowledgeItem` con `source_type=voice_note` a través de Multimodal Gemini API.
-- [x] Porcentaje de completitud reacciona en la UI sin recargar (`knowledge_completeness`).
-- [x] Errores al fetchear enlaces del negocio son no-bloqueantes.
+## DoD Bloque 2.3 ✅
+- [x] Reglas de Escalamiento leídas y actualizadas en Supabase.
+- [x] Simulador de Conexión de WhatsApp logguea cambios adecuadamente.
+- [x] Agente Sandbox responde basándose en el contexto del onboarding.
+- [x] Botón maestro de activación empuja a Dashboard exitosamente.
 
 ## Próximo paso
-Bloque 2.3 — Configuración de Escalation Rules (M1.4).
+Bloque 3.1 — Inbox: Live Chat View & Agent Realtime Control.
 
 ## Commits
-- `chore: session-end [bloque 2.2] onboarding flow m1.2 m1.3, supabase rpc fixes, and ui polish` (Pendiente)
+- `chore: session-end [bloque 2.3] onboarding m1.4 m1.5 m1.6 sandbox api bugs and ui` (Pendiente)
