@@ -276,6 +276,11 @@ CLIENTE: ${msgContent}`
                 }])
                 if (insErr) throw insErr
 
+                // Update conversation status
+                await supabase.from('conversations').update({ 
+                    status: `escalated_${agentOutput.escalation_level || 'informative'}` 
+                }).eq('id', conversationId)
+
                 if (isContainment) {
                     const containmentText = agentOutput.escalation_level === 'urgent' ? 
                         "Hemos registrado tu caso como urgente y un miembro de nuestro equipo lo revisará a la brevedad." : 
@@ -301,6 +306,11 @@ CLIENTE: ${msgContent}`
                     }
                 }])
                 if (insErr) throw insErr
+
+                // Update conversation status
+                await supabase.from('conversations').update({ 
+                    status: 'pending_approval' 
+                }).eq('id', conversationId)
             }
         }
 

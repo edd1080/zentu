@@ -129,6 +129,14 @@ export default function ConversationThreadPage({
         // Simple reload logic for states if conversation changes
         loadData();
       })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'suggestions', filter: `conversation_id=eq.${id}` }, () => {
+        // Reload to show the new suggestion widget
+        loadData();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'escalations', filter: `conversation_id=eq.${id}` }, () => {
+        // Reload to show the new escalation banner
+        loadData();
+      })
       .subscribe();
 
     return () => {
