@@ -91,16 +91,20 @@ serve(async (req: Request) => {
         let conversationId
         const { data: activeConv } = await supabase
             .from('conversations')
-            .select('id')
+            .select('id, status')
             .eq('business_id', business.id)
             .eq('client_phone', clientPhone)
-            .eq('status', 'active')
+            .neq('status', 'archived')
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle()
 
         if (activeConv) {
             conversationId = activeConv.id
+            // Reopen if resolved so the UI knows it needs attention again
+            if (activeConv.status === 'resolved') {
+                await supabase.from('conversations').update({ status: 'active' }).eq('id', conversationId)
+            }
         } else {
             console.log(`Creating new conversation for phone ${clientPhone}`)
             const { data: newConv, error: convError } = await supabase

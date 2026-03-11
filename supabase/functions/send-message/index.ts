@@ -43,7 +43,7 @@ serve(async (req: Request) => {
     if (!authHeader) return new Response('Unauthorized', { status: 401 })
 
     try {
-        const { conversation_id, content } = await req.json()
+        const { conversation_id, content, sender_type = 'agent' } = await req.json()
 
         if (!conversation_id || !content) {
             return new Response("Missing conversation_id or content", { status: 400 })
@@ -92,7 +92,7 @@ serve(async (req: Request) => {
             .insert([{
                 conversation_id: conversation_id,
                 direction: 'outbound',
-                sender_type: 'agent', // or 'owner' depending on caller, default to agent for automatic. Can be passed in body.
+                sender_type: sender_type,
                 content: content,
                 media_type: 'text',
                 whatsapp_message_id: waMessageId,

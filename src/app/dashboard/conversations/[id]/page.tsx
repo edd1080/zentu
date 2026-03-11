@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, MoreVertical, ArrowUp } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { MessageBubble, MessageSenderType } from "@/components/dashboard/MessageBubble";
@@ -25,12 +25,9 @@ const MOCK_MESSAGES: MockMsg[] = [
   { id: "m3", sender: "client", content: "¿Puedo llevar a mi perro pequeño? Es muy tranquilo.", time: "10:05 AM" },
 ];
 
-export default function ConversationThreadPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = React.use(params);
+export default function ConversationThreadPage() {
+  const params = useParams();
+  const id = params?.id as string;
   const router = useRouter();
   const { toast } = useToast();
   
@@ -41,6 +38,7 @@ export default function ConversationThreadPage({
   const [activeEscalation, setActiveEscalation] = React.useState<any>(null);
   const [clientData, setClientData] = React.useState({ name: "Cargando...", phone: "" });
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [manualReply, setManualReply] = React.useState("");
   const supabase = createClient();
 
   React.useEffect(() => {
@@ -59,11 +57,13 @@ export default function ConversationThreadPage({
       }
 
       // 2. Fetch Messages
-      const { data: msgs } = await supabase
+      const { data: msgs, error: msgsErr } = await supabase
         .from("messages")
         .select("*")
         .eq("conversation_id", id)
         .order("created_at", { ascending: true });
+
+      console.log("Fetched messages:", msgs, "Error:", msgsErr);
 
       if (msgs) {
         setMessages(msgs.map(m => ({
@@ -83,7 +83,7 @@ export default function ConversationThreadPage({
           .eq("status", "pending")
           .order("created_at", { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
           
         if (sugg) {
           setActiveSuggestion(sugg);
@@ -97,7 +97,7 @@ export default function ConversationThreadPage({
           .eq("status", "active")
           .order("created_at", { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
           
         if (esc) {
           setActiveEscalation(esc);
@@ -181,16 +181,13 @@ export default function ConversationThreadPage({
       } else if (action === "reply") {
         setSuggestionState("handled");
         
-        // MVP: Insert message manually as owner to trigger Webhook or standard process later
-        const { error } = await supabase.from('messages').insert({
-          conversation_id: id,
-          sender_type: 'owner',
-          direction: 'outbound',
-          content: content || "",
-          status: 'sent'
+        // Invoke send-message Edge Function
+        const { error: sendError } = await supabase.functions.invoke('send-message', {
+          body: { conversation_id: id, content: content || "", sender_type: 'owner' }
         });
 
-        if (error) throw error;
+        if (sendError) throw sendError;
+        
         toast({ type: "success", message: "Respuesta manual enviada correctamente." });
         
         // Also close escalation
@@ -260,7 +257,7 @@ export default function ConversationThreadPage({
           {suggestionState === "escalated" && activeEscalation && (
             <div className="w-full bg-white rounded-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.08)] p-4 border border-(--surface-border)">
               <EscalationBannerWidget
-                type={`escalated_${activeEscalation.level}` as EscalationType}
+                type={activeEscalation.level === "urgent" ? "urgent" : activeEscalation.level === "sensitive" ? "escalated_sensitive" : "escalated_info"}
                 reason={activeEscalation.reason}
                 onSendDirect={(text) => handleAction("reply", text)}
                 isProcessing={isProcessing}
@@ -269,14 +266,34 @@ export default function ConversationThreadPage({
           )}
 
           {suggestionState === "handled" && (
-            <div className="w-full bg-white border border-(--surface-border-strong) rounded-full flex items-center p-1 shadow-md focus-within:ring-2 focus-within:ring-(--color-primary-700)">
+            <div className="w-full bg-white border border-(--surface-border-strong) rounded-full flex items-center p-1 shadow-sm focus-within:ring-2 focus-within:ring-(--color-primary-700)">
               <input 
                 type="text"
-                placeholder="Escribe un mensaje..."
+                value={manualReply}
+                onChange={(e) => setManualReply(e.target.value)}
+                placeholder="Escribe un mensaje libre..."
                 className="flex-1 bg-transparent border-none px-4 py-3 h-[48px] text-[15px] focus:outline-none"
-                onClick={() => toast({type: "info", message: "Integración programada para el siguiente bloque"})}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (manualReply.trim()) {
+                      handleAction("reply", manualReply);
+                      setManualReply("");
+                    }
+                  }
+                }}
               />
-              <Button className="rounded-full h-10 w-10 p-0 shrink-0 ml-1 bg-(--text-tertiary)">
+              <Button 
+                className="rounded-full h-10 w-10 p-0 shrink-0 ml-1 bg-(--color-primary-600) hover:bg-(--color-primary-700) text-white"
+                disabled={!manualReply.trim() || isProcessing}
+                isLoading={isProcessing}
+                onClick={() => {
+                  if (manualReply.trim()) {
+                    handleAction("reply", manualReply);
+                    setManualReply("");
+                  }
+                }}
+              >
                 <ArrowUp className="h-5 w-5" />
               </Button>
             </div>
