@@ -12,4 +12,8 @@ Al finalizar el trabajo de una sesión, ejecuta los siguientes pasos en orden:
    - En "Blockers", expón tareas bloqueadas.
    - En "DoD", marca las casillas completadas si corresponde.
    - Actualiza "Última sesión" a la fecha actual.
-5. **Commit:** (Opcional, sujeto a instrucción del usuario) Si el usuario lo permite, prepara o sugiere el commit de cierre estilo "chore: session-end [bloque]".
+5. **Handoff Document:** Crea un documento en `docs/meta/session-prompts/YYYY-MM-DD_handoff_[bloque]_complete.md` con el siguiente estándar de calidad:
+   - **Prompt de Inicio:** Un bloque de texto listo para copiar y pegar que incluya: Fase/Bloque activo, estado detallado, pendientes, objetivos del día y decisiones críticas.
+   - **Inventario Técnico:** Listado exhaustivo de archivos modificados/creados con el impacto técnico de cada uno.
+   - **Rigor:** Debe ser tan completo como el de referencia (`2026-03-12-handoff-fase4-complete.md`).
+6. **Commit:** (Opcional, sujeto a instrucción del usuario) Si el usuario lo permite, prepara o sugiere el commit de cierre estilo "chore: session-end [bloque]".

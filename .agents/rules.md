@@ -133,4 +133,4 @@ Cuando corrijas un error o descubras un patrón que no debería repetirse:
 
 ## LEARNED
 
-*(vacío al inicio — se llena durante el desarrollo)*
+- **Calidad de Handoff:** Los documentos de cierre de sesión en `docs/meta/session-prompts/` deben incluir siempre un prompt listo para copiar y un inventario técnico detallado. El estándar mínimo es el establecido en `2026-03-12-handoff-fase4-complete.md`.
