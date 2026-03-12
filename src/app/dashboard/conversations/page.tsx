@@ -5,6 +5,7 @@ import { ConversationItem, ConversationStatus, ActionRequired } from "@/componen
 import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 type MockConv = {
   id: string;
@@ -23,6 +24,7 @@ type FilterTab = "attention" | "handled" | "archived";
 
 export default function InboxPage() {
   const [activeTab, setActiveTab] = React.useState<FilterTab>("attention");
+  const [urgencyFilter, setUrgencyFilter] = React.useState<ActionRequired | "all">("all");
   const [searchQuery, setSearchQuery] = React.useState("");
   
   const [conversations, setConversations] = React.useState<MockConv[]>([]);
@@ -97,7 +99,13 @@ export default function InboxPage() {
       
       // 2. Tab Filter
       if (activeTab === "attention") {
-        return conv.actionRequired !== "none" || conv.status === "active";
+        const matchesAttention = conv.actionRequired !== "none" || conv.status === "active";
+        if (!matchesAttention) return false;
+        
+        if (urgencyFilter !== "all") {
+          return conv.actionRequired === urgencyFilter;
+        }
+        return true;
       }
       if (activeTab === "handled") {
         return conv.actionRequired === "none" && conv.status === "bot_handled";
@@ -115,7 +123,7 @@ export default function InboxPage() {
       }
       return 0; // Simplified sort
     });
-  }, [activeTab, searchQuery, conversations]);
+  }, [activeTab, searchQuery, conversations, urgencyFilter]);
 
   return (
     <div className="flex flex-col h-full w-full bg-(--surface-background)">
@@ -173,6 +181,67 @@ export default function InboxPage() {
             Archivadas
           </button>
         </div>
+
+        {activeTab === "attention" && (
+          <div className="flex gap-2 mt-4 pb-4 border-b border-transparent overflow-x-auto hide-scrollbar">
+            <button 
+              onClick={() => setUrgencyFilter("all")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                urgencyFilter === "all" 
+                  ? "bg-(--color-primary-700) text-white" 
+                  : "bg-(--surface-muted) text-(--text-secondary) hover:bg-(--surface-border)"
+              )}
+            >
+              Todos
+            </button>
+            <button 
+              onClick={() => setUrgencyFilter("urgent")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5",
+                urgencyFilter === "urgent" 
+                  ? "bg-(--color-error-500) text-white whitespace-nowrap" 
+                  : "bg-(--color-error-100) text-(--color-error-700) hover:bg-(--color-error-100) whitespace-nowrap"
+              )}
+            >
+              <div className={cn("w-1.5 h-1.5 rounded-full bg-current", urgencyFilter === "urgent" ? "animate-pulse" : "blink")} />
+              Urgente
+            </button>
+            <button 
+              onClick={() => setUrgencyFilter("escalated_sensitive")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
+                urgencyFilter === "escalated_sensitive" 
+                  ? "bg-(--color-warning-500) text-white" 
+                  : "bg-(--color-warning-100) text-(--color-warning-700) hover:bg-(--color-warning-100)"
+              )}
+            >
+              Sensible
+            </button>
+            <button 
+              onClick={() => setUrgencyFilter("escalated_info")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
+                urgencyFilter === "escalated_info" 
+                  ? "bg-(--color-accent-500) text-white" 
+                  : "bg-(--color-accent-100) text-(--color-accent-700) hover:bg-(--color-accent-100)"
+              )}
+            >
+              Informativo
+            </button>
+            <button 
+              onClick={() => setUrgencyFilter("pending_approval")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
+                urgencyFilter === "pending_approval" 
+                  ? "bg-(--color-success-500) text-white" 
+                  : "bg-(--color-success-100) text-(--color-success-700) hover:bg-(--color-success-100)"
+              )}
+            >
+              Sugerencia
+            </button>
+          </div>
+        )}
       </div>
 
       {/* List Area */}

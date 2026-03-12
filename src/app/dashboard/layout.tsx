@@ -1,5 +1,6 @@
 import { ToastProvider } from "@/components/ui/Toast";
 import { AppSidebar, MobileNav } from "@/components/dashboard/AppNavigation";
+import OneSignalInitializer from "@/components/notifications/OneSignalInitializer";
 
 export default function DashboardLayout({
   children,
@@ -8,6 +9,7 @@ export default function DashboardLayout({
 }) {
   return (
     <ToastProvider>
+      <OneSignalInitializer />
       <div className="flex h-screen w-full flex-col md:flex-row bg-(--surface-background) overflow-hidden">
         <AppSidebar />
         

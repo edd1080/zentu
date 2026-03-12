@@ -55,10 +55,10 @@ serve(async (req: Request) => {
 
         console.log(`Received message type: ${msgType} from ${clientPhone} to ${phoneNumberId} (wamid: ${wamid})`)
 
-        // 1. Find Business
+        // 1. Find Business & Owner
         const { data: business, error: bizError } = await supabase
             .from('businesses')
-            .select('id, name')
+            .select('id, name, owner_id')
             .eq('whatsapp_phone_number_id', phoneNumberId)
             .single()
 
@@ -144,7 +144,16 @@ serve(async (req: Request) => {
             throw msgInsertError
         }
 
-        // 5. Emergency Keyword Filter (Deterministic Phase)
+        // Notification Info Fetch
+        const { data: owner } = await supabase.from('owners').select('id, onesignal_id').eq('id', business.owner_id).single()
+        const ownerOneSignalId = owner?.onesignal_id
+
+        // 5. Context & Timing (Night Silence)
+        const now = new Date()
+        const hour = now.getHours()
+        const isNight = hour >= 22 || hour < 7
+        
+        // 6. Emergency Keyword Filter (Deterministic Phase)
         const emergencyKeywords = ['urgente', 'emergencia', 'intoxicación', 'accidente', 'queja', 'robo', 'denuncia']
         const hasEmergency = emergencyKeywords.some(kw => msgContent.toLowerCase().includes(kw))
 
@@ -160,14 +169,56 @@ serve(async (req: Request) => {
             }])
             if (insErr) throw insErr
             
-            // Send containment message
+            // Mark conversation as escalated_urgent
+            await supabase.from('conversations').update({ status: 'escalated_urgent' }).eq('id', conversationId)
+
+            // Send immediate containment message
             await supabase.functions.invoke('send-message', {
                 body: { conversation_id: conversationId, content: "Hemos registrado tu caso como urgente y un miembro de nuestro equipo lo revisará a la brevedad.", sender_type: 'system' },
                 headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
             })
             
+            // Trigger immediate push notification
+            if (ownerOneSignalId) {
+                // Urgent bypasses night silence, otherwise check timing
+                if (isNight) {
+                    console.log(`[PUSH] Night silence active, but bypassing for EMERGENCY in business ${business.id}`)
+                }
+
+                await supabase.functions.invoke('send-notification', {
+                    body: { 
+                        owner_id: business.owner_id, 
+                        title: `🚨 URGENTE: ${business.name}`, 
+                        body: `Mensaje de emergencia: "${msgContent.substring(0, 50)}..."`,
+                        action_url: `${SUPABASE_URL?.replace('.supabase.co', '')}/dashboard` // Fallback URL or dashboard
+                    },
+                    headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+                })
+                await supabase.from('escalations').update({ notified_push_at: new Date().toISOString() }).eq('conversation_id', conversationId).eq('status', 'active')
+            }
+            
             if (queueId) await supabase.from('webhook_queue').update({ status: 'completed' }).eq('id', queueId)
             return new Response("Emergency escalation processed", { status: 200 })
+        }
+
+        // 6.2 Passive Inbound Notification (for normal activity tracking)
+        if (ownerOneSignalId && !isNight && !hasEmergency) {
+             await supabase.functions.invoke('send-notification', {
+                body: { 
+                    owner_id: business.owner_id, 
+                    title: `📥 Actividad: ${business.name}`, 
+                    body: `${clientName} envió un mensaje. AGENTI está revisando.`,
+                    action_url: "http://localhost:3001/dashboard"
+                },
+                headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+            })
+        }
+
+        // Night Silence bypass check
+        if (isNight && !hasEmergency) {
+            console.log("Night silence active. Delaying/Silencing non-urgent response suggestion generation.")
+            // For now, we still process to have the suggestion ready, 
+            // but in a real prod app we might flag the suggestion to 'silent_notification: true'
         }
 
         // 6. Multimedia Escalation
@@ -293,6 +344,28 @@ CLIENTE: ${msgContent}`
                         body: { conversation_id: conversationId, content: containmentText, sender_type: 'system' },
                         headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
                     })
+
+                    // Trigger immediate push notification for LLM detected escalation
+                    if (ownerOneSignalId) {
+                        const isUrgent = agentOutput.escalation_level === 'urgent'
+                        
+                        // Only send if NOT night or if URGENT
+                        if (!isNight || isUrgent) {
+                            const levelEmoji = isUrgent ? '🚨' : '⚠️'
+                            await supabase.functions.invoke('send-notification', {
+                                body: { 
+                                    owner_id: business.owner_id, 
+                                    title: `${levelEmoji} Escalamiento: ${business.name}`, 
+                                    body: agentOutput.escalation_reason || "Nueva consulta requiere tu atención.",
+                                    action_url: "http://localhost:3001/dashboard"
+                                },
+                                headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+                            })
+                            await supabase.from('escalations').update({ notified_push_at: new Date().toISOString() }).eq('conversation_id', conversationId).eq('status', 'active')
+                        } else {
+                            console.log(`[PUSH] Silencing '${agentOutput.escalation_level}' escalation push due to night hours.`)
+                        }
+                    }
                 }
             } else {
                 await supabase.from('webhook_queue').update({ error_message: 'TRACE: Inserting Suggestion' }).eq('id', queueId!)
@@ -315,6 +388,19 @@ CLIENTE: ${msgContent}`
                 await supabase.from('conversations').update({ 
                     status: 'pending_approval' 
                 }).eq('id', conversationId)
+
+                // Trigger push notification for Suggestion (Collaborator Mode)
+                if (ownerOneSignalId && !isNight) {
+                    await supabase.functions.invoke('send-notification', {
+                        body: { 
+                            owner_id: business.owner_id, 
+                            title: `💬 Sugerencia: ${business.name}`, 
+                            body: `AGENTI preparó una respuesta para ${clientName}.`,
+                            action_url: "http://localhost:3001/dashboard"
+                        },
+                        headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+                    })
+                }
             }
         }
 

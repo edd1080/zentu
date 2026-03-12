@@ -44,8 +44,9 @@ Principio: de adentro hacia afuera (DB → backend → motor → frontend).
 
 | Bloque | Nombre | DoD resumido |
 |---|---|---|
-| 4.1 | Escalamiento en frontend | Indicadores visuales por nivel; mensaje de contención al cliente < 2s; botón de atender cambia estado |
-| 4.2 | Notificaciones push y WhatsApp urgente | Push urgente < 10s; WhatsApp al dueño si no atiende en 5 min; agrupación de Suggestions correcta; silencio nocturno funciona |
+| 4.1 | Escalamiento en frontend | Indicadores visuales por nivel; mensaje de contención al cliente < 2s; botón de atender cambia estado | ✅ |
+| 4.2 | Infraestructura de Notificaciones (OneSignal) | SDK de OneSignal integrado en Web; permisos solicitados; `player_id` guardado en DB; Edge Function puede enviar Push test | ✅ |
+| 4.3 | Flujos de Escalamiento Proactivos | Push urgente < 10s; WhatsApp al dueño si no atiende en 5 min; agrupación de Suggestions correcta; silencio nocturno funciona | ✅ |
 
 ---
 

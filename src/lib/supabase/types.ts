@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_context_cache: {
+        Row: {
+          business_id: string
+          context_string: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          business_id: string
+          context_string: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string
+          context_string?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_context_cache_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           activation_date: string | null
@@ -65,8 +94,8 @@ export type Database = {
         Row: {
           activated_at: string | null
           activated_by:
-          | Database["public"]["Enums"]["autonomy_activated_by"]
-          | null
+            | Database["public"]["Enums"]["autonomy_activated_by"]
+            | null
           active: boolean
           business_id: string
           id: string
@@ -76,8 +105,8 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           activated_by?:
-          | Database["public"]["Enums"]["autonomy_activated_by"]
-          | null
+            | Database["public"]["Enums"]["autonomy_activated_by"]
+            | null
           active?: boolean
           business_id: string
           id?: string
@@ -87,8 +116,8 @@ export type Database = {
         Update: {
           activated_at?: string | null
           activated_by?:
-          | Database["public"]["Enums"]["autonomy_activated_by"]
-          | null
+            | Database["public"]["Enums"]["autonomy_activated_by"]
+            | null
           active?: boolean
           business_id?: string
           id?: string
@@ -393,6 +422,7 @@ export type Database = {
           created_at: string
           id: string
           level: Database["public"]["Enums"]["escalation_level"]
+          metadata: Json | null
           notified_push_at: string | null
           notified_whatsapp_at: string | null
           reason: string
@@ -409,6 +439,7 @@ export type Database = {
           created_at?: string
           id?: string
           level: Database["public"]["Enums"]["escalation_level"]
+          metadata?: Json | null
           notified_push_at?: string | null
           notified_whatsapp_at?: string | null
           reason: string
@@ -425,6 +456,7 @@ export type Database = {
           created_at?: string
           id?: string
           level?: Database["public"]["Enums"]["escalation_level"]
+          metadata?: Json | null
           notified_push_at?: string | null
           notified_whatsapp_at?: string | null
           reason?: string
@@ -767,6 +799,7 @@ export type Database = {
           full_name: string
           id: string
           last_active_at: string
+          onesignal_id: string | null
           phone_personal: string | null
           phone_verified: boolean
         }
@@ -776,6 +809,7 @@ export type Database = {
           full_name: string
           id: string
           last_active_at?: string
+          onesignal_id?: string | null
           phone_personal?: string | null
           phone_verified?: boolean
         }
@@ -785,6 +819,7 @@ export type Database = {
           full_name?: string
           id?: string
           last_active_at?: string
+          onesignal_id?: string | null
           phone_personal?: string | null
           phone_verified?: boolean
         }
@@ -799,14 +834,15 @@ export type Database = {
           conversation_id: string
           correction_valid_until: string | null
           correction_validity:
-          | Database["public"]["Enums"]["knowledge_validity"]
-          | null
+            | Database["public"]["Enums"]["knowledge_validity"]
+            | null
           created_at: string
           detected_intent: string | null
           detected_intent_label: string | null
           final_content: string | null
           id: string
           knowledge_items_used: string[] | null
+          metadata: Json | null
           resolved_at: string | null
           resolved_by_owner: boolean | null
           status: Database["public"]["Enums"]["suggestion_status"]
@@ -819,14 +855,15 @@ export type Database = {
           conversation_id: string
           correction_valid_until?: string | null
           correction_validity?:
-          | Database["public"]["Enums"]["knowledge_validity"]
-          | null
+            | Database["public"]["Enums"]["knowledge_validity"]
+            | null
           created_at?: string
           detected_intent?: string | null
           detected_intent_label?: string | null
           final_content?: string | null
           id?: string
           knowledge_items_used?: string[] | null
+          metadata?: Json | null
           resolved_at?: string | null
           resolved_by_owner?: boolean | null
           status?: Database["public"]["Enums"]["suggestion_status"]
@@ -839,14 +876,15 @@ export type Database = {
           conversation_id?: string
           correction_valid_until?: string | null
           correction_validity?:
-          | Database["public"]["Enums"]["knowledge_validity"]
-          | null
+            | Database["public"]["Enums"]["knowledge_validity"]
+            | null
           created_at?: string
           detected_intent?: string | null
           detected_intent_label?: string | null
           final_content?: string | null
           id?: string
           knowledge_items_used?: string[] | null
+          metadata?: Json | null
           resolved_at?: string | null
           resolved_by_owner?: boolean | null
           status?: Database["public"]["Enums"]["suggestion_status"]
@@ -867,6 +905,138 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_logs: {
+        Row: {
+          actor: Database["public"]["Enums"]["log_actor"]
+          business_id: string | null
+          conversation_id: string | null
+          created_at: string
+          error_message: string | null
+          error_type: string | null
+          escalation_id: string | null
+          event_type: string
+          id: string
+          llm_latency_ms: number | null
+          llm_model: string | null
+          llm_provider: string | null
+          llm_tokens_input: number | null
+          llm_tokens_output: number | null
+          message_id: string | null
+          metadata: Json | null
+          outcome: Database["public"]["Enums"]["log_outcome"]
+          suggestion_id: string | null
+          trace_id: string
+        }
+        Insert: {
+          actor?: Database["public"]["Enums"]["log_actor"]
+          business_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          error_type?: string | null
+          escalation_id?: string | null
+          event_type: string
+          id?: string
+          llm_latency_ms?: number | null
+          llm_model?: string | null
+          llm_provider?: string | null
+          llm_tokens_input?: number | null
+          llm_tokens_output?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          outcome?: Database["public"]["Enums"]["log_outcome"]
+          suggestion_id?: string | null
+          trace_id: string
+        }
+        Update: {
+          actor?: Database["public"]["Enums"]["log_actor"]
+          business_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          error_type?: string | null
+          escalation_id?: string | null
+          event_type?: string
+          id?: string
+          llm_latency_ms?: number | null
+          llm_model?: string | null
+          llm_provider?: string | null
+          llm_tokens_input?: number | null
+          llm_tokens_output?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          outcome?: Database["public"]["Enums"]["log_outcome"]
+          suggestion_id?: string | null
+          trace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_escalation_id_fkey"
+            columns: ["escalation_id"]
+            isOneToOne: false
+            referencedRelation: "escalations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          id: string
+          payload: Json
+          status: Database["public"]["Enums"]["webhook_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payload: Json
+          status?: Database["public"]["Enums"]["webhook_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payload?: Json
+          status?: Database["public"]["Enums"]["webhook_status"]
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -900,76 +1070,79 @@ export type Database = {
       confidence_tier: "high" | "medium" | "low"
       conversation_priority: "normal" | "elevated" | "urgent"
       conversation_status:
-      | "active"
-      | "pending_approval"
-      | "escalated_informative"
-      | "escalated_sensitive"
-      | "escalated_urgent"
-      | "waiting"
-      | "resolved"
-      | "archived"
+        | "active"
+        | "pending_approval"
+        | "escalated_informative"
+        | "escalated_sensitive"
+        | "escalated_urgent"
+        | "waiting"
+        | "resolved"
+        | "archived"
       escalation_entry_status: "active" | "attended" | "resolved"
       escalation_level: "informative" | "sensitive" | "urgent"
       escalation_trigger_type:
-      | "missing_info"
-      | "sensitive_topic"
-      | "keyword_match"
-      | "emergency_keyword"
+        | "missing_info"
+        | "sensitive_topic"
+        | "keyword_match"
+        | "emergency_keyword"
       industry_type:
-      | "restaurant"
-      | "clinic"
-      | "salon"
-      | "retail"
-      | "gym"
-      | "professional_services"
-      | "other"
+        | "restaurant"
+        | "clinic"
+        | "salon"
+        | "retail"
+        | "gym"
+        | "professional_services"
+        | "other"
       knowledge_layer: "structured" | "operational" | "narrative" | "learned"
       knowledge_source_type:
-      | "onboarding"
-      | "quick_instruct"
-      | "voice_note"
-      | "image_ocr"
-      | "link_extraction"
-      | "correction"
+        | "onboarding"
+        | "quick_instruct"
+        | "voice_note"
+        | "image_ocr"
+        | "link_extraction"
+        | "correction"
       knowledge_validity: "permanent" | "temporary" | "one_time"
+      log_actor: "owner" | "system" | "client" | "meta_webhook"
+      log_outcome: "success" | "error" | "timeout" | "fallback"
       media_type: "text" | "image" | "audio" | "document"
       message_delivery_status: "sent" | "delivered" | "read" | "failed"
       message_direction: "inbound" | "outbound"
       notification_channel: "push" | "whatsapp" | "in_app"
       notification_status:
-      | "pending"
-      | "sent"
-      | "delivered"
-      | "opened"
-      | "failed"
+        | "pending"
+        | "sent"
+        | "delivered"
+        | "opened"
+        | "failed"
       onboarding_step:
-      | "industry"
-      | "knowledge"
-      | "escalation_rules"
-      | "whatsapp"
-      | "test"
-      | "activation"
-      | "complete"
+        | "industry"
+        | "knowledge"
+        | "escalation_rules"
+        | "whatsapp"
+        | "test"
+        | "activation"
+        | "complete"
       resolved_by_type:
-      | "agent_autonomous"
-      | "owner_approved"
-      | "owner_manual"
-      | "pending"
+        | "agent_autonomous"
+        | "owner_approved"
+        | "owner_manual"
+        | "pending"
       sender_type: "client" | "agent" | "owner" | "system"
       suggestion_status:
-      | "pending"
-      | "approved"
-      | "edited"
-      | "rejected"
-      | "expired"
-      | "auto_sent"
+        | "pending"
+        | "approved"
+        | "edited"
+        | "rejected"
+        | "expired"
+        | "auto_sent"
       summary_type: "daily" | "weekly" | "first_week"
+      webhook_status: "pending" | "processing" | "completed" | "error"
       whatsapp_status:
-      | "disconnected"
-      | "connecting"
-      | "connected"
-      | "expired"
-      | "error"
+        | "disconnected"
+        | "connecting"
+        | "connected"
+        | "expired"
+        | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -983,116 +1156,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
@@ -1142,6 +1315,8 @@ export const Constants = {
         "correction",
       ],
       knowledge_validity: ["permanent", "temporary", "one_time"],
+      log_actor: ["owner", "system", "client", "meta_webhook"],
+      log_outcome: ["success", "error", "timeout", "fallback"],
       media_type: ["text", "image", "audio", "document"],
       message_delivery_status: ["sent", "delivered", "read", "failed"],
       message_direction: ["inbound", "outbound"],
@@ -1172,6 +1347,7 @@ export const Constants = {
         "auto_sent",
       ],
       summary_type: ["daily", "weekly", "first_week"],
+      webhook_status: ["pending", "processing", "completed", "error"],
       whatsapp_status: [
         "disconnected",
         "connecting",

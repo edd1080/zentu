@@ -27,26 +27,34 @@ async function sendWhatsAppMessage(phoneId: string, token: string, toPhone: stri
 
     if (!response.ok) {
         const errData = await response.text()
+        console.error(`Meta API Error Response (${response.status}):`, errData)
         throw new Error(`Meta API error (${response.status}): ${errData}`)
     }
 
     return await response.json()
 }
 
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 serve(async (req: Request) => {
-    // Basic service-role auth (internal function primarily, although could be called via UI with anon if RLS allowed, but better keep it secure and call via DB triggers or other edge functions, actually frontend calls it maybe? No, frontend calls suggestion-actions).
-    // The frontend might call suggestion-actions, which then calls send-message, or calls send-message directly.
-    // If called via anon key, we should rely on RLS or require auth header.
-    // Let's require the user to send their JWT, but wait, process-message (backend) also calls this.
-    // For simplicity, we can accept SUPABASE_SERVICE_ROLE_KEY for internal calls, and validate user auth for external calls.
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+    }
+
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return new Response('Unauthorized', { status: 401 })
+    if (!authHeader) {
+        console.error("No authorization header provided")
+        return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+    }
 
     try {
         const { conversation_id, content, sender_type = 'agent' } = await req.json()
 
         if (!conversation_id || !content) {
-            return new Response("Missing conversation_id or content", { status: 400 })
+            return new Response("Missing conversation_id or content", { status: 400, headers: corsHeaders })
         }
 
         // 1. Get conversation details to find business and client phone
@@ -61,7 +69,7 @@ serve(async (req: Request) => {
         // 2. Get business WhatsApp credentials
         const { data: business, error: bizError } = await supabase
             .from('businesses')
-            .select('whatsapp_phone_number_id, whatsapp_access_token')
+            .select('id, whatsapp_phone_number_id, whatsapp_access_token')
             .eq('id', conversation.business_id)
             .single()
 
@@ -72,6 +80,9 @@ serve(async (req: Request) => {
         // 3. Send message via Meta API
         let messageStatus = 'sent'
         let waMessageId = null
+        let metaError = null
+        const traceId = crypto.randomUUID()
+
         try {
             const metaResponse = await sendWhatsAppMessage(
                 business.whatsapp_phone_number_id,
@@ -80,10 +91,29 @@ serve(async (req: Request) => {
                 content
             )
             waMessageId = metaResponse.messages?.[0]?.id || null
-        } catch (metaErr) {
-            console.error("Failed to send WhatsApp message:", metaErr)
+        } catch (err: any) {
+            console.error("Failed to send WhatsApp message:", err)
             messageStatus = 'failed'
-            // Keep going to insert the failed message record
+            metaError = err.message || String(err)
+            
+            // Log to system_logs for visibility
+            try {
+                await supabase.from('system_logs').insert([{
+                    trace_id: traceId,
+                    event_type: 'whatsapp_send_error',
+                    business_id: conversation.business_id,
+                    conversation_id: conversation_id,
+                    outcome: 'error',
+                    error_message: metaError,
+                    metadata: { 
+                        phone_id: business.whatsapp_phone_number_id,
+                        to: conversation.client_phone,
+                        content_preview: content.substring(0, 50)
+                    }
+                }])
+            } catch (logErr) {
+                console.error("Critical: Failed to log error to system_logs:", logErr)
+            }
         }
 
         // 4. Insert into messages table
@@ -110,13 +140,32 @@ serve(async (req: Request) => {
             .eq('id', conversation_id)
 
         if (messageStatus === 'failed') {
-            return new Response(JSON.stringify({ error: "Message recorded but failed to send via Meta" }), { status: 502, headers: { "Content-Type": "application/json" } })
+            return new Response(JSON.stringify({ 
+                error: "Message recorded but failed to send via Meta", 
+                details: metaError 
+            }), { 
+                status: 502, 
+                headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            })
         }
 
-        return new Response(JSON.stringify({ message_id: newMsg.id, status: 'sent', whatsapp_id: waMessageId }), { status: 200, headers: { "Content-Type": "application/json" } })
+        return new Response(JSON.stringify({ message_id: newMsg.id, status: 'sent', whatsapp_id: waMessageId }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } })
 
     } catch (error: any) {
         console.error("Send message error:", error)
-        return new Response(JSON.stringify({ error: String(error.message || error) }), { status: 500, headers: { "Content-Type": "application/json" } })
+        
+        // Final fallback log
+        try {
+            await supabase.from('system_logs').insert([{
+                trace_id: crypto.randomUUID(),
+                event_type: 'send_message_crash',
+                outcome: 'error',
+                error_message: error.message || String(error)
+            }])
+        } catch (inner) {
+            console.error("Logging failed too:", inner)
+        }
+
+        return new Response(JSON.stringify({ error: String(error.message || error) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } })
     }
 })

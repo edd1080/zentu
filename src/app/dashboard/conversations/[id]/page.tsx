@@ -161,8 +161,12 @@ export default function ConversationThreadPage() {
           ...(content && { edited_content: content })
         };
 
+        const { data: { session } } = await supabase.auth.getSession();
         const { error } = await supabase.functions.invoke('suggestion-actions', {
-          body: reqBody
+          body: reqBody,
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`
+          }
         });
 
         if (error) throw error;
@@ -171,19 +175,41 @@ export default function ConversationThreadPage() {
       } else if (action === "reject") {
         if (!activeSuggestion) return;
         setSuggestionState("handled");
+        const { data: { session } } = await supabase.auth.getSession();
         const { error } = await supabase.functions.invoke('suggestion-actions', {
-          body: { suggestion_id: activeSuggestion.id, action: "reject" }
+          body: { suggestion_id: activeSuggestion.id, action: "reject" },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`
+          }
         });
         
         if (error) throw error;
         toast({ type: "info", message: "Borrador descartado. Puedes escribir directamente." });
       
+      } else if (action === "attend_escalation") {
+        if (!activeEscalation) return;
+        setSuggestionState("handled");
+        const { data: { session } } = await supabase.auth.getSession();
+        const { error } = await supabase.functions.invoke('suggestion-actions', {
+          body: { conversation_id: id, action: "attend_escalation" }, // Fallback to conversation_id
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`
+          }
+        });
+        
+        if (error) throw error;
+        toast({ type: "success", message: "Ahora tienes el control manual de esta conversación." });
+
       } else if (action === "reply") {
         setSuggestionState("handled");
         
         // Invoke send-message Edge Function
+        const { data: { session } } = await supabase.auth.getSession();
         const { error: sendError } = await supabase.functions.invoke('send-message', {
-          body: { conversation_id: id, content: content || "", sender_type: 'owner' }
+          body: { conversation_id: id, content: content || "", sender_type: 'owner' },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`
+          }
         });
 
         if (sendError) throw sendError;
@@ -260,6 +286,7 @@ export default function ConversationThreadPage() {
                 type={activeEscalation.level === "urgent" ? "urgent" : activeEscalation.level === "sensitive" ? "escalated_sensitive" : "escalated_info"}
                 reason={activeEscalation.reason}
                 onSendDirect={(text) => handleAction("reply", text)}
+                onAttend={() => handleAction("attend_escalation")}
                 isProcessing={isProcessing}
               />
             </div>

@@ -11,6 +11,7 @@ export interface EscalationBannerWidgetProps {
   type: EscalationType;
   reason: string;
   onSendDirect: (content: string) => void;
+  onAttend?: () => void;
   isProcessing?: boolean;
 }
 
@@ -18,6 +19,7 @@ export function EscalationBannerWidget({
   type,
   reason,
   onSendDirect,
+  onAttend,
   isProcessing
 }: EscalationBannerWidgetProps) {
   const [directReply, setDirectReply] = React.useState("");
@@ -58,10 +60,22 @@ export function EscalationBannerWidget({
   return (
     <div className="w-full flex flex-col gap-3">
       {/* Banner */}
-      <div className={cn("w-full border rounded-xl p-4 flex gap-3 animate-in fade-in", current.color, current.borderColor)}>
+      <div className={cn("w-full border rounded-xl p-4 flex flex-col sm:flex-row gap-3 animate-in fade-in", current.color, current.borderColor)}>
         <div className="shrink-0 mt-0.5">{current.icon}</div>
-        <div className="flex flex-col">
-          <span className={cn("text-sm font-bold", current.textColor)}>{current.title}</span>
+        <div className="flex flex-col flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <span className={cn("text-sm font-bold", current.textColor)}>{current.title}</span>
+            {onAttend && (
+              <Button 
+                variant="secondary" 
+                onClick={onAttend}
+                disabled={isProcessing}
+                className="h-8 min-h-0 text-xs px-3 bg-white/50 border-(--surface-border-strong) hover:bg-white"
+              >
+                Atender
+              </Button>
+            )}
+          </div>
           <p className="text-sm text-(--text-secondary) mt-1">{reason}</p>
         </div>
       </div>
@@ -72,7 +86,7 @@ export function EscalationBannerWidget({
           type="text"
           value={directReply}
           onChange={(e) => setDirectReply(e.target.value)}
-          placeholder="Escribe tu respuesta directamente..."
+          placeholder="Responder directamente..."
           className="flex-1 bg-transparent border-none px-4 py-3 h-[48px] text-[15px] focus:outline-none"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {

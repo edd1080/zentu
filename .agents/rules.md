@@ -120,9 +120,16 @@ Las skills de TDD, debugging sistemático, code review y verification-before-com
 ## Self-correction
 
 Cuando corrijas un error o descubras un patrón que no debería repetirse:
-1. Proponer la regla aprendida en el chat antes de aplicarla
-2. Agregarla a la sección LEARNED de este archivo
-3. Si es un patrón de seguridad o de arquitectura, agregarla también al skill correspondiente en `.claude/skills/`
+1. Sigue el protocolo de la skill `self-improvement`.
+2. Registra la lección en `tasks/lessons.md` siguiendo el template.
+3. Agrega la regla aprendida a la sección LEARNED de este archivo.
+4. Si es un patrón de seguridad o de arquitectura, agrégala también al skill correspondiente.
+
+## Estrategias de flujo
+
+- **Subagent Strategy**: Offload research, exploration, and parallel analysis to subagents using `dispatching-parallel-agents`. One task per subagent.
+- **Verification Before Done**: Evidence before assertions. Use `verification-before-completion`. Never claim success without running the verification command in the current session.
+- **Demand Elegance**: For non-trivial changes, pause and ask "is there a more elegant way?". Avoid hacky solutions.
 
 ## LEARNED
 
