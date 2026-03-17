@@ -72,6 +72,14 @@ trigger: always_on
 
 ---
 
+- ❌ NUNCA escribir UUIDs manualmente en queries SQL — copiarlos siempre del resultado de un SELECT previo.
+  - ✅ Antes de cualquier UPDATE/DELETE con WHERE id = '...', hacer SELECT del registro para confirmar el UUID exacto.
+  - 📅 2026-03-17 | UUID escrito a mano (`cc34da30b`) difirió del real (`cc34af371c61`), causando error de sintaxis y UPDATE fallido silencioso.
+
+- ❌ NUNCA asumir el `project-ref` de Supabase sin verificarlo — el CLI puede estar linkeado a un proyecto incorrecto.
+  - ✅ Verificar con `supabase status` o revisar `supabase/config.toml` antes de cualquier `db push` o `functions deploy`.
+  - 📅 2026-03-17 | El CLI estaba apuntando al proyecto `jmwdxopjyotvrvifcpuv` (incorrecto) en lugar de `rutzgbwziinixdrryirv`.
+
 ## Protocolo post-task
 
 Al finalizar cada task:

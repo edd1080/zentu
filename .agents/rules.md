@@ -8,6 +8,13 @@ Stack: Next.js 14 (App Router) + Supabase (Postgres + Edge Functions Deno + Real
 
 Si algo no está especificado en los documentos, preguntar antes de inventar. Nunca asumir.
 
+## Colaboración Crítica y Desafío
+
+Este proyecto se basa en la co-creación. El agente de IA NO debe ser un ejecutor pasivo.
+- **Desafío Activo**: Si el usuario propone una idea que parece técnicamente ineficiente, rompe la arquitectura establecida o perjudica la UX, el agente DEBE cuestionarla constructivamente.
+- **Búsqueda de la Excelencia**: El objetivo no es solo completar la tarea, sino encontrar la mejor solución técnica y funcional.
+- **Principio de Copiloto**: Somos una pareja de programadores. El usuario puede equivocarse, y es responsabilidad del agente actuar como guardián de la calidad y coherencia del producto.
+
 ---
 
 ## Documentos de referencia
@@ -79,10 +86,14 @@ Todos los documentos están en `docs/`. Leer el documento correcto antes de cons
 ## Reglas de calidad
 
 - Antes de empezar cualquier tarea, ejecutar `/check-docs` para identificar qué documentos aplican.
-- Verificar que el código funciona antes de marcar una tarea como completa. Nunca marcar done sin probar el flujo completo.
-- Atomic git commits: un commit por tarea completada, con mensaje descriptivo en formato `type: descripción`.
+- **Protocolo de Verificación Obligatorio:** Antes de marcar cualquier tarea como lista:
+  - **Consultoría de Schema:** Es obligatorio verificar la estructura de las tablas en `docs/data-entities.md` y las migraciones en `supabase/migrations/` antes de escribir cualquier query o Edge Function. Hallucinar o asumir nombres de columnas es un fallo crítico.
+  - **Evidencia Técnica:** Debe presentarse evidencia (logs, curl o capturas) de que el código funciona en el entorno de destino.
+  - **Cero Tolerancia:** Las integraciones frontend-backend deben verificarse en el contexto de ejecución final.
+- **Atomic git commits**: un commit por tarea completada, con mensaje descriptivo en formato `type: descripción`.
 - Si algo no funciona después de 2 intentos, documentar el problema en STATE.md y parar. No seguir intentando sin diagnóstico.
 - Al final de cada sesión, ejecutar `/session-end` para actualizar STATE.md con decisiones tomadas y lecciones aprendidas.
+- **Cero Tolerancia a Errores de Conexión**: Antes de dar por terminada una integración frontend-backend, se debe verificar que el endpoint es accesible desde el contexto de ejecución.
 - Antes de avanzar de bloque, ejecutar `/phase-done` para verificar el DoD completo del bloque.
 
 ---
@@ -134,3 +145,4 @@ Cuando corrijas un error o descubras un patrón que no debería repetirse:
 ## LEARNED
 
 - **Calidad de Handoff:** Los documentos de cierre de sesión en `docs/meta/session-prompts/` deben incluir siempre un prompt listo para copiar y un inventario técnico detallado. El estándar mínimo es el establecido en `2026-03-12-handoff-fase4-complete.md`.
+- **Verificación de Despliegue:** Es mandatorio verificar que las Edge Functions están desplegadas y son alcanzables antes de notificar éxito. El estado "local" no garantiza funcionalidad. (Lección 2026-03-13).

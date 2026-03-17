@@ -377,19 +377,19 @@ Una vez que el dueño envía una respuesta, el banner cambia a estado resuelto c
 
 ### 4.1 — Estado del agente (M3.2)
 
-La pantalla de estado del agente es el mapa de competencias del agente. Muestra cuánto sabe el agente sobre cada área del negocio.
+La pantalla de estado del agente muestra las **Áreas del negocio** — qué tan cubierto está el conocimiento del agente por área. Esta sección se llama explícitamente "Áreas del negocio", no "Mapa de competencias", para evitar confusión con las instrucciones individuales.
 
 El header tiene el título "Tu agente" y a la derecha un ícono de historial que lleva a M3.3.
 
-Un resumen en la parte superior de la pantalla: una frase en texto base que cuantifica el estado general. Por ejemplo: "Tu agente conoce bien 4 de 7 temas de tu negocio." Esta frase actualiza dinámicamente.
+**Tarjeta de Salud Operativa:** resumen global en un card oscuro (emerald-900) con el porcentaje de salud, el nivel (En Desarrollo / Óptimo / Excelente) y dos métricas: "Áreas Cubiertas X/Y" y "Sin Cubrir N". El porcentaje se calcula de forma binaria: áreas core con al menos 1 instrucción / total de áreas core. Actualiza en tiempo real vía Supabase Realtime.
 
-Debajo, la lista de temas con el componente SkillIndicator para cada uno. La lista está ordenada: los temas en rojo primero, los amarillos después, los verdes al fondo. Esto refleja prioridad de entrenamiento.
+**Áreas core (is_default=true):** son los temas definidos por el template de industria durante el onboarding. Se muestran como cards individuales con cobertura binaria — ✓ Cubierta (verde, tiene al menos 1 instrucción) o ○ Sin cubrir (gris, sin instrucciones). Cada card muestra el nombre del área y el conteo de instrucciones ("2 instrucciones" / "Sin cubrir"). Al expandir una card, muestra la lista de instrucciones aprendidas en ese tema, organizadas por capa (Dato fijo, Política, Descriptivo, Aprendido).
 
-Cada SkillIndicator muestra el nombre del tema, la barra de progreso con color según el estado, el badge de estado en texto humano, y los botones de acción directa para los temas en rojo o amarillo.
+**Conocimiento adicional:** sección colapsable debajo de las áreas core. Contiene los topics creados dinámicamente por el LLM al procesar instrucciones que no encajan en ningún área core. Estos topics NO afectan el health score — son conocimiento complementario del negocio. Se muestran en formato compacto. El dueño no los crea manualmente — son generados automáticamente.
 
-Al tocar un SkillIndicator, se expande para mostrar más detalle: el número de conversaciones del agente en ese tema en los últimos 7 días, el porcentaje de respuestas aprobadas sin edición, y una lista de las últimas preguntas de clientes sobre ese tema. Esta expansión es un accordion con animación de slide-down.
+**Aviso de áreas sin cubrir:** si hay áreas core sin instrucciones, aparece un prompt entre las cards: "Usa Instrucción rápida para cubrir las áreas sin conocimiento."
 
-**Sugerencia de autonomía:** si el tema está en verde y todos los indicadores de evidencia están en positivo, aparece dentro del SkillIndicator expandido un elemento especial: "¿Quieres que tu agente responda solo en este tema?" con un botón "Activar autonomía" que abre el modal de M4.3.
+**Sugerencia de autonomía:** si un área core tiene suficientes instrucciones y buen historial de aprobaciones, aparece en su panel expandido: "¿Quieres que tu agente responda solo en este tema?" con botón "Activar autonomía" que abre M4.3.
 
 ### 4.2 — Instrucción rápida y entrenamiento (M3.1)
 

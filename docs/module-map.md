@@ -272,13 +272,19 @@ Estados: campo vacío, escribiendo, procesando, confirmación pendiente, integra
 
 **M3.2 — Estado del agente**
 
-Propósito: mapa visual de qué tan bien preparado está el agente por tema.
+Propósito: mostrar las "Áreas del negocio" — qué tan cubierto está el conocimiento del agente por área temática.
 
-Lista de temas por industria con indicador de tres estados: verde (dominado), amarillo (parcial), rojo (sin información). Los temas en rojo tienen botón de acción directa que abre M3.1 pre-configurado para ese tema.
+**Modelo de conocimiento por áreas:**
+- **Áreas core (is_default=true):** definidas por el template de industria al completar el onboarding. Fijas y estables — no crecen por instrucciones nuevas. Cada área tiene cobertura binaria: cubierta (≥1 instrucción activa) o sin cubrir (0 instrucciones).
+- **Conocimiento adicional (is_default=false):** topics generados automáticamente por el LLM cuando una instrucción no encaja en ningún área core. Se muestran en sección colapsable separada y NO afectan el health score.
 
-Porcentaje global de preparación visible en el header y en el home. "Tu agente conoce el 73% de tu negocio."
+**Health score:** porcentaje de áreas core cubiertas / total de áreas core. Nunca se diluye por agregar conocimiento adicional.
 
-Estados: mapa vacío primer uso, parcialmente completo, bien completo, tema en detalle.
+**Cobertura por área:** binaria. Una instrucción es suficiente para que un área esté "cubierta". No hay porcentajes por área individual. Al expandir un área, el dueño ve la lista de instrucciones aprendidas en ese tema organizadas por capa.
+
+**Realtime:** el health score y las cards de área actualizan automáticamente vía Supabase Realtime cuando se confirma una instrucción nueva, sin recargar la página.
+
+Estados: áreas vacías (primer uso), parcialmente cubiertas, todas cubiertas, área en detalle con instrucciones.
 
 **M3.3 — Historial de aprendizaje**
 
