@@ -66,10 +66,16 @@ export default function AgentPage() {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'competency_topics', filter: `business_id=eq.${businessId}` },
-        (payload: any) => {
+        async (payload: any) => {
+          // Fetch fresh knowledge_count for the changed topic so binary card state is correct
+          const { count } = await supabase
+            .from('knowledge_items')
+            .select('id', { count: 'exact', head: true })
+            .eq('topic_id', payload.new.id)
+            .eq('active', true);
           setTopics(prev => prev.map(t =>
             t.id === payload.new.id
-              ? { ...t, coverage_percentage: payload.new.coverage_percentage, status: payload.new.status }
+              ? { ...t, coverage_percentage: payload.new.coverage_percentage, status: payload.new.status, knowledge_count: count ?? t.knowledge_count }
               : t
           ));
         }
@@ -99,12 +105,16 @@ export default function AgentPage() {
         return { ...t, knowledge_count: count || 0 };
       })
     );
-    setTopics(topicsWithCounts);
+    // Preserve cached items for already-expanded topics to avoid spinner flash
+    setTopics(prev => topicsWithCounts.map(t => ({
+      ...t,
+      items: prev.find(p => p.id === t.id)?.items,
+    })));
   }
 
   async function handleTopicClick(topicId: string) {
     const topic = topics.find(t => t.id === topicId);
-    if (!topic || topic.items !== undefined) return;
+    if (!topic) return;
 
     const { data } = await supabase
       .from('knowledge_items')

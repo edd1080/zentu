@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Mic, Paperclip, ArrowUp, Square, X, Loader2, Check, Brain, AlertCircle, Info } from "lucide-react";
+import { Mic, Paperclip, ArrowUp, Square, X, Loader2, Check, Brain, AlertCircle, Info, RefreshCw, PlusCircle } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,12 @@ interface Proposal {
   justification: string;
 }
 
+interface ConflictingItem {
+  id: string;
+  content: string;
+  layer: string;
+}
+
 interface QuickInstructProps {
   className?: string;
   businessId?: string;
@@ -34,6 +40,8 @@ export function QuickInstruct({ className, businessId, onSuccess }: QuickInstruc
   const [recordingTime, setRecordingTime] = React.useState(0);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [proposal, setProposal] = React.useState<Proposal | null>(null);
+  const [conflictingItems, setConflictingItems] = React.useState<ConflictingItem[]>([]);
+  const [replaceMode, setReplaceMode] = React.useState(false);
   const [attachedFiles, setAttachedFiles] = React.useState<File[]>([]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -162,7 +170,30 @@ export function QuickInstruct({ className, businessId, onSuccess }: QuickInstruc
       }
 
       setProposal(data.proposal);
-      
+
+      // Check for conflicting items in same topic+layer
+      try {
+        const { data: topic } = await supabase
+          .from('competency_topics')
+          .select('id')
+          .eq('business_id', targetBusinessId)
+          .eq('name', data.proposal.topic)
+          .single()
+
+        if (topic) {
+          const { data: existing } = await supabase
+            .from('knowledge_items')
+            .select('id, content, layer')
+            .eq('business_id', targetBusinessId)
+            .eq('topic_id', topic.id)
+            .eq('layer', data.proposal.layer)
+            .eq('active', true)
+          setConflictingItems(existing || [])
+        }
+      } catch (_) {
+        // conflict check is non-critical
+      }
+
     } catch (err: any) {
       console.error("AGENTI: Error final:", err);
       toast({
@@ -183,7 +214,8 @@ export function QuickInstruct({ className, businessId, onSuccess }: QuickInstruc
       const { error } = await supabase.functions.invoke('confirm-instruction', {
         body: {
           proposed_item: proposal,
-          business_id: businessId || (await supabase.from('businesses').select('id').single()).data?.id
+          business_id: businessId || (await supabase.from('businesses').select('id').single()).data?.id,
+          replace_previous: replaceMode
         }
       });
 
@@ -211,6 +243,8 @@ export function QuickInstruct({ className, businessId, onSuccess }: QuickInstruc
     setContent("");
     setAttachedFiles([]);
     setProposal(null);
+    setConflictingItems([]);
+    setReplaceMode(false);
     setIsExpanded(false);
     setIsProcessing(false);
   };
@@ -367,8 +401,47 @@ export function QuickInstruct({ className, businessId, onSuccess }: QuickInstruc
         </div>
       </div>
 
+      {conflictingItems.length > 0 && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <div className="flex items-center gap-2 mb-2 text-amber-700">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span className="text-xs font-semibold">Ya existe una instrucción en esta área y capa</span>
+          </div>
+          <p className="text-xs text-amber-800 mb-3 line-clamp-2 italic">
+            "{conflictingItems[0].content}"
+          </p>
+          {/* Segmented selector */}
+          <div className="flex bg-amber-100 rounded-lg p-0.5">
+            <button
+              type="button"
+              onClick={() => setReplaceMode(true)}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                replaceMode
+                  ? 'bg-white text-amber-800 shadow-sm'
+                  : 'text-amber-600 hover:text-amber-800'
+              }`}
+            >
+              <RefreshCw className="h-3 w-3" />
+              Reemplazar
+            </button>
+            <button
+              type="button"
+              onClick={() => setReplaceMode(false)}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                !replaceMode
+                  ? 'bg-white text-amber-800 shadow-sm'
+                  : 'text-amber-600 hover:text-amber-800'
+              }`}
+            >
+              <PlusCircle className="h-3 w-3" />
+              Agregar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
-        <Button 
+        <Button
             className="flex-1 h-12 rounded-xl text-base font-semibold"
             onClick={confirmInstruction}
             disabled={isProcessing}

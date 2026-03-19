@@ -288,13 +288,19 @@ Estados: áreas vacías (primer uso), parcialmente cubiertas, todas cubiertas, �
 
 **M3.3 — Historial de aprendizaje**
 
-Propósito: transparencia de qué ha aprendido el agente, cuándo y con qué clasificación.
+Propósito: transparencia de qué ha aprendido el agente, cuándo y con qué clasificación. Herramienta de auditoría para que el dueño detecte y corrija conocimiento obsoleto o incorrecto.
 
-Lista cronológica de instrucciones integradas, correcciones permanentes y actualizaciones automáticas. Cada entrada muestra: qué cambió, cuándo, y si es permanente o temporal. Opción de revertir cualquier entrada.
+Ruta: `/dashboard/agent/history`. Accesible desde el botón "Historial" en la pantalla "Tu Agente".
 
-Este módulo permite al dueño auditar al agente cuando algo no funciona como espera.
+**Funcionalidades implementadas:**
+- Lista cronológica inversa de `knowledge_items` con topic, fecha, capa (traducida: Dato fijo / Política / Descriptivo / Aprendido) e ícono de tipo (texto / voz / imagen).
+- Buscador por contenido o nombre de topic.
+- Filtro segmentado por tipo de fuente: Todos / Texto / Voz / Imagen.
+- Items inactivos se muestran con opacidad reducida y badge "Inactiva".
+- **Desactivar instrucción:** requiere confirmación en modal con preview del contenido. Tras confirmar: `active = false`, llama RPC `refresh_competency_coverage`, invalida `agent_context_cache`. El mapa de áreas actualiza en tiempo real via Realtime.
+- **Reactivar instrucción:** acción directa sin modal (reversible, de bajo riesgo).
 
-Estados: historial vacío, con entradas, entrada en detalle, reversión de instrucción.
+Estados: historial vacío, con entradas, filtro activo sin resultados.
 
 ---
 

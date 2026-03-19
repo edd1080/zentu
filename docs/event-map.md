@@ -435,17 +435,21 @@ Cada evento sigue este formato:
 ---
 
 ### `instruction_confirmed`
-**Trigger:** dueño toca "Sí, correcto" en la confirmación del agente
+**Trigger:** dueño toca "Sí, guárdalo" en la tarjeta de propuesta del QuickInstruct
 **Actor:** owner
+**Parámetros:**
+- `replace_previous` (bool, default `false`): si `true`, desactiva todos los `KnowledgeItem` activos del mismo `topic_id + layer` antes de crear el nuevo. El dueño elige mediante un selector en la UI cuando hay conflicto detectado.
 **Efecto en datos:**
-- Crear `KnowledgeItem` con el contenido procesado
-- `validity` según la clasificación del dueño (aparece zona de clasificación igual que en correcciones)
-- Actualizar `CompetencyTopic` afectado
-- `KnowledgeItem.confirmed_by_owner = true`
+- Si `replace_previous = true`: desactiva `KnowledgeItem` existentes con mismo `topic_id + layer`
+- Crear `KnowledgeSource` (tipo `quick_instruct`) + `KnowledgeItem` con `confirmed_by_owner = true`
+- Llamar RPC `refresh_competency_coverage(p_business_id)` → recalcula `coverage_percentage` y `status` en `competency_topics`
+- Invalidar `agent_context_cache` del negocio y triggear `build-agent-context`
 **Efecto en UI:**
-- Confirmación del agente: "Listo. [descripción del cambio en lenguaje del dueño]"
+- Toast de éxito: "¡Entendido! He aprendido algo nuevo."
 - QuickInstruct regresa a estado neutro
-- Si era un tema en rojo: `CompetencyTopic.status` puede cambiar a amarillo o verde si la cobertura aumentó
+- Mapa de áreas actualiza cobertura binaria en tiempo real via Supabase Realtime (UPDATE en `competency_topics`)
+- Si el topic pasó de 0 a ≥1 instrucción: card cambia de "Sin cubrir" (gris) a "Cubierta" (verde)
+**Detección de conflicto (frontend):** tras recibir la propuesta del LLM, QuickInstruct consulta `knowledge_items` activos del mismo topic+layer. Si existen, muestra panel ámbar con selector segmentado "Reemplazar / Agregar".
 **Notificación:** ninguna
 **Siguiente estado:** ninguno específico
 

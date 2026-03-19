@@ -43,7 +43,7 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'invalid_body', message: 'Invalid JSON body' }), { status: 400, headers: corsHeaders })
     }
 
-    const { proposed_item, business_id } = body
+    const { proposed_item, business_id, replace_previous = false } = body
 
     // 3. Verify ownership
     const { data: business, error: bizError } = await supabase
@@ -77,7 +77,19 @@ serve(async (req: Request) => {
       topic = newTopic
     }
 
-    // 5. Register Knowledge Source
+    // 5. If replace_previous, deactivate existing items of same topic+layer
+    if (replace_previous && topic) {
+      await supabase
+        .from('knowledge_items')
+        .update({ active: false })
+        .eq('business_id', business_id)
+        .eq('topic_id', topic.id)
+        .eq('layer', proposed_item.layer || 'learned')
+        .eq('active', true)
+      console.log("AGENTI: Items anteriores desactivados para topic:", topic.id, "layer:", proposed_item.layer)
+    }
+
+    // 7. Register Knowledge Source
     const { data: source, error: sourceError } = await supabase
       .from('knowledge_sources')
       .insert([{
