@@ -11,7 +11,8 @@ serve(async (req: Request) => {
     if (req.method !== "POST") return new Response("Method not allowed", { status: 405 })
 
     const authHeader = req.headers.get("Authorization")
-    if (authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
+    const apikey = req.headers.get("apikey")
+    if (authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` && apikey !== SUPABASE_SERVICE_ROLE_KEY) {
         console.error("Unauthorized request to process-message")
         return new Response("Unauthorized", { status: 401 })
     }

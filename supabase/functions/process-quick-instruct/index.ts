@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 import { callPrimaryLLM } from "../_shared/llm/index.ts"
+import { callMultimodalLLM } from "../_shared/multimodal.ts"
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
@@ -17,32 +18,27 @@ serve(async (req: Request) => {
   }
 
   try {
-    console.log("AGENTI: process-quick-instruct invocada")
-
     // 1. Extract JWT token from Authorization header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       console.error("AGENTI: No Authorization header found")
       return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401, headers: corsHeaders })
     }
-    
+
     const token = authHeader.replace('Bearer ', '')
-    console.log("AGENTI: Token recibido, longitud:", token.length)
 
     // 2. Create service role client and verify user with their token
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
+
     if (authError || !user) {
       console.error("AGENTI: Auth failed:", authError?.message || "No user")
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
         error: 'auth_failed',
         message: authError?.message || 'No user session found',
         hint: 'Intenta cerrar sesión y volver a entrar.'
       }), { status: 401, headers: corsHeaders })
     }
-
-    console.log("AGENTI: Autenticado como user:", user.id)
 
     // 3. Secrets check
     const geminiKey = Deno.env.get("LLM_PRIMARY_API_KEY")
@@ -60,8 +56,7 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'invalid_body', message: 'Invalid JSON body' }), { status: 400, headers: corsHeaders })
     }
 
-    const { content, type, business_id } = body
-    console.log("AGENTI: business_id:", business_id, "type:", type)
+    const { content, type, business_id, audioBase64, fileBase64, mimeType } = body
 
     // 5. Verify ownership
     const { data: business, error: bizError } = await supabase
@@ -76,8 +71,6 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'business_not_found', message: 'Business not found or unauthorized' }), { status: 404, headers: corsHeaders })
     }
 
-    console.log("AGENTI: Business verificado:", business.name)
-
     // 6. Load existing topics so LLM can reuse them instead of inventing new ones
     const { data: existingTopics } = await supabase
       .from('competency_topics')
@@ -88,8 +81,11 @@ serve(async (req: Request) => {
       ? existingTopics.map((t: { name: string }) => `"${t.name}"`).join(', ')
       : 'ninguno aún'
 
-    // 7. LLM processing
-    const systemPrompt = `Eres el Gerente de Inteligencia de AGENTI.
+    const typeLabel = type === 'voice_note' ? 'nota de voz' : type === 'pdf' ? 'documento PDF' : type === 'image_ocr' ? 'imagen' : 'texto'
+    const isMultimodal = (type === 'voice_note' && audioBase64) || ((type === 'image_ocr' || type === 'pdf') && fileBase64)
+
+    // 7. Build system prompt
+    const systemPromptBase = `Eres el Gerente de Inteligencia de AGENTI.
 Tu tarea es transformar una instrucción informal del dueño de un negocio en un ítem de conocimiento estructurado (KnowledgeItem).
 
 TEMAS EXISTENTES DEL NEGOCIO: ${topicsList}
@@ -114,28 +110,32 @@ FORMATO DE SALIDA (JSON):
     "source_type": "quick_instruct"
   },
   "justification": "string (breve explicación de por qué lo clasificaste así)"
-}
+}`
 
-Instrucción del dueño (${type}): ${content}`
+    const systemPrompt = isMultimodal
+      ? `${systemPromptBase}\n\nEl dueño del negocio ha enviado una ${typeLabel}. Analiza su contenido y genera la propuesta.`
+      : `${systemPromptBase}\n\nInstrucción del dueño (${typeLabel}): ${content}`
 
-    console.log("AGENTI: Llamando al LLM...")
-    const llmResponse = await callPrimaryLLM(systemPrompt, "Genera la propuesta estructurada ahora.", { responseFormat: "json_object" })
-    console.log("AGENTI: LLM respondió, parseando JSON...")
-    
+    // 8. Call LLM (multimodal or text)
+    let llmContent: string
+    if (isMultimodal) {
+      const mediaBase64 = type === 'voice_note' ? audioBase64 : fileBase64
+      const mediaKind: 'audio' | 'image' = type === 'voice_note' ? 'audio' : 'image'
+      llmContent = await callMultimodalLLM(systemPrompt, mediaBase64, mimeType, mediaKind)
+    } else {
+      const llmResponse = await callPrimaryLLM(systemPrompt, "Genera la propuesta estructurada ahora.", { responseFormat: "json_object" })
+      llmContent = llmResponse.content
+    }
+
     let proposal
     try {
-      proposal = JSON.parse(llmResponse.content)
+      proposal = JSON.parse(llmContent)
     } catch (e) {
-      console.error("AGENTI: JSON Parse Error", llmResponse.content)
+      console.error("AGENTI: JSON Parse Error", llmContent)
       throw new Error("Error procesando la respuesta de la IA")
     }
 
-    console.log("AGENTI: Propuesta generada exitosamente para topic:", proposal.topic)
-
-    return new Response(JSON.stringify({ proposal }), {
-      headers: corsHeaders,
-      status: 200,
-    })
+    return new Response(JSON.stringify({ proposal }), { headers: corsHeaders, status: 200 })
 
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)

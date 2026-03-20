@@ -80,7 +80,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           
-          <QuickInstruct />
+          <QuickInstruct businessId={business.id} />
         </section>
 
         {/* 3. Summarized Inbox */}

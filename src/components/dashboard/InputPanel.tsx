@@ -3,6 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Mic, Paperclip, ArrowUp, Square, X, Loader2 } from "lucide-react";
+import { useVoiceRecorder } from "./useVoiceRecorder";
 
 const PLACEHOLDERS = [
   "Ej. Mañana cerramos a las 3 PM...",
@@ -10,9 +11,21 @@ const PLACEHOLDERS = [
   "Ej. No hay reservaciones para hoy...",
 ];
 
+export interface FileAttachment {
+  file: File;
+  base64: string;
+  mimeType: string;
+}
+
+export type QuickInstructPayload =
+  | { type: "text"; content: string; files?: FileAttachment[] }
+  | { type: "voice_note"; audioBase64: string; mimeType: string }
+  | { type: "image_ocr"; fileBase64: string; mimeType: string; content?: string }
+  | { type: "pdf"; fileBase64: string; mimeType: string; content?: string };
+
 interface InputPanelProps {
   isProcessing: boolean;
-  onSubmit: (content: string, files: File[]) => void;
+  onSubmit: (payload: QuickInstructPayload) => void;
 }
 
 export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
@@ -21,29 +34,52 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
   const [placeholderIdx, setPlaceholderIdx] = React.useState(0);
   const [isRecording, setIsRecording] = React.useState(false);
   const [recordingTime, setRecordingTime] = React.useState(0);
-  const [attachedFiles, setAttachedFiles] = React.useState<File[]>([]);
+  const [attachedFiles, setAttachedFiles] = React.useState<FileAttachment[]>([]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const { startRecording, stopRecording } = useVoiceRecorder({
+    onSubmit,
+    onStart: () => { setIsRecording(true); setIsExpanded(true); },
+    onStop: () => { setIsRecording(false); setIsExpanded(false); },
+  });
 
   React.useEffect(() => {
     if (isExpanded) return;
     const id = setInterval(() => setPlaceholderIdx(p => (p + 1) % PLACEHOLDERS.length), 4000);
     return () => clearInterval(id);
   }, [isExpanded]);
-
   React.useEffect(() => {
     if (!isRecording) { setRecordingTime(0); return; }
     const id = setInterval(() => setRecordingTime(p => p + 1), 1000);
     return () => clearInterval(id);
   }, [isRecording]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    Array.from(e.target.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        setAttachedFiles(prev => [...prev, { file, base64, mimeType: file.type }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    setIsExpanded(true);
+  };
   const handleFocus = () => { setIsExpanded(true); setTimeout(() => textareaRef.current?.focus(), 50); };
   const handleBlur = (e: React.FocusEvent) => {
     if (!content && attachedFiles.length === 0 && !e.currentTarget.contains(e.relatedTarget)) { setIsExpanded(false); setIsRecording(false); }
   };
   const handleSubmit = () => {
     if (!content.trim() && attachedFiles.length === 0) return;
-    onSubmit(content, attachedFiles);
+    if (attachedFiles.length > 0) {
+      const first = attachedFiles[0];
+      const type = first.mimeType === "application/pdf" ? "pdf" : "image_ocr";
+      onSubmit({ type, fileBase64: first.base64, mimeType: first.mimeType, content: content.trim() || undefined });
+    } else {
+      onSubmit({ type: "text", content: content.trim() });
+    }
     setContent(""); setAttachedFiles([]); setIsExpanded(false);
   };
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
@@ -61,18 +97,10 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
         {isRecording ? (
           <div className="flex-1 flex items-center justify-between pl-4 pr-1 text-(--text-primary)">
             <div className="flex items-center gap-3">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
-              </span>
+              <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" /><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" /></span>
               <span className="text-sm font-medium">Escuchando... {formatTime(recordingTime)}</span>
             </div>
-            <button
-              onClick={() => { setIsRecording(false); setContent("Esta es una transcripción simulada de lo que dictaste."); textareaRef.current?.focus(); }}
-              className="ml-4 h-10 w-10 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200"
-            >
-              <Square className="h-4 w-4 fill-current" />
-            </button>
+            <button onClick={stopRecording} className="ml-4 h-10 w-10 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200"><Square className="h-4 w-4 fill-current" /></button>
           </div>
         ) : (
           <div className="flex flex-col w-full">
@@ -90,12 +118,10 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
             />
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2 px-3 pb-2">
-                {attachedFiles.map((file, i) => (
+                {attachedFiles.map((fa, i) => (
                   <div key={i} className="flex items-center gap-1.5 bg-(--surface-muted) px-2 py-1 rounded-md border border-(--surface-border)">
-                    <span className="text-xs font-medium text-(--text-secondary) truncate max-w-[150px]">{file.name}</span>
-                    <button onClick={() => setAttachedFiles(p => p.filter((_, idx) => idx !== i))} className="text-(--text-tertiary) hover:text-(--text-primary)">
-                      <X className="h-3 w-3" />
-                    </button>
+                    <span className="text-xs font-medium text-(--text-secondary) truncate max-w-[150px]">{fa.file.name}</span>
+                    <button onClick={() => setAttachedFiles(p => p.filter((_, idx) => idx !== i))} className="text-(--text-tertiary) hover:text-(--text-primary)"><X className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -105,34 +131,15 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
       </div>
 
       {!isRecording && (
-        <div className={cn(
-          "flex items-center justify-between px-2 pb-2 pt-0",
-          isExpanded ? "opacity-100" : "opacity-100 absolute right-1 top-[5px]"
-        )}>
+        <div className={cn("flex items-center justify-between px-2 pb-2 pt-0", isExpanded ? "opacity-100" : "opacity-100 absolute right-1 top-[5px]")}>
           <div className={cn("flex items-center gap-1", !isExpanded && "hidden")}>
-            <input type="file" ref={fileInputRef} onChange={e => { if (e.target.files) { setAttachedFiles(p => [...p, ...Array.from(e.target.files!)]); setIsExpanded(true); } }} className="hidden" multiple accept="image/*,application/pdf" />
-            <button className="p-2 text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-muted) rounded-lg transition-colors" type="button" onClick={() => fileInputRef.current?.click()} disabled={isProcessing}>
-              <Paperclip className="h-5 w-5" />
-            </button>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*,application/pdf" />
+            <button className="p-2 text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-muted) rounded-lg transition-colors" type="button" onClick={() => fileInputRef.current?.click()} disabled={isProcessing}><Paperclip className="h-5 w-5" /></button>
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            {!isExpanded && (
-              <button className="p-2 text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-muted) rounded-lg transition-colors" onClick={e => { e.preventDefault(); setIsRecording(true); setIsExpanded(true); }} type="button" disabled={isProcessing}>
-                <Mic className="h-5 w-5" />
-              </button>
-            )}
-            {isExpanded && !isProcessing && (
-              <span className="text-xs text-(--text-tertiary) mr-2">{content.length}/500</span>
-            )}
-            <button
-              onClick={handleSubmit}
-              disabled={(!content.trim() && attachedFiles.length === 0) || isProcessing}
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full transition-all",
-                (content.trim() || attachedFiles.length > 0) ? "bg-(--color-primary-700) text-white hover:bg-(--color-primary-800)" : "bg-(--surface-muted) text-(--text-disabled)",
-                !isExpanded && "hidden"
-              )}
-            >
+            {!isExpanded && <button className="p-2 text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-muted) rounded-lg transition-colors" onClick={e => { e.preventDefault(); startRecording(); }} type="button" disabled={isProcessing}><Mic className="h-5 w-5" /></button>}
+            {isExpanded && !isProcessing && <span className="text-xs text-(--text-tertiary) mr-2">{content.length}/500</span>}
+            <button onClick={handleSubmit} disabled={(!content.trim() && attachedFiles.length === 0) || isProcessing} className={cn("flex h-9 w-9 items-center justify-center rounded-full transition-all", (content.trim() || attachedFiles.length > 0) ? "bg-(--color-primary-700) text-white hover:bg-(--color-primary-800)" : "bg-(--surface-muted) text-(--text-disabled)", !isExpanded && "hidden")}>
               {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
             </button>
           </div>

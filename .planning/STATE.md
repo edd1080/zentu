@@ -1,7 +1,8 @@
 # Estado actual
 Fase activa: 5
-Bloque activo: Bloque 5.1 — Instrucción rápida y entrenamiento
+Bloque activo: Bloque 5.2 — Inteligencia y resúmenes
 Última sesión: 2026-03-19
+Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento ✅
 
 ## Roadmap Extendido
 - Se integró el **Roadmap Post-MVP v1.0** (`docs/development-plan-2.md`) que añade las Fases 8 a 15 para la evolución del producto tras el MVP.
@@ -41,11 +42,20 @@ Bloque activo: Bloque 5.1 — Instrucción rápida y entrenamiento
 - [x] Instrucción contradictoria: selector Reemplazar/Agregar
 - [x] M3.3 Historial de aprendizaje completo
 - [x] Revertir instrucción desde historial refleja en mapa en tiempo real
-- [ ] Notas de voz (grabación real — actualmente simulada)
-- [ ] Test 1.3 PDFs/imágenes end-to-end
+- [x] Notas de voz (grabación real — MediaRecorder + base64 → Gemini multimodal)
+- [x] Test 1.3 PDFs/imágenes end-to-end (FileReader base64 → Gemini image_url)
+
+## Qué se construyó (sesión 2026-03-19 — continuación)
+
+### Notas de voz (grabación real) + PDFs/imágenes multimodal
+- **`src/components/dashboard/useVoiceRecorder.ts`** (nuevo, 53 líneas): Hook que encapsula MediaRecorder real. `getUserMedia → MediaRecorder → Blob → FileReader → base64 → onSubmit`. Libera el micrófono después de cada grabación. Falla silenciosamente si se deniega el permiso.
+- **`src/components/dashboard/InputPanel.tsx`** (150 líneas): Usa `useVoiceRecorder`. Exporta `QuickInstructPayload` (tipo discriminado) y `FileAttachment`. `handleFileChange` convierte archivos a base64 vía `FileReader` al seleccionarlos. `handleSubmit` construye el payload correcto según tipo (`text` / `image_ocr` / `pdf`).
+- **`src/components/dashboard/QuickInstruct.tsx`** (143 líneas): Acepta `QuickInstructPayload` en `processInstruction`. Construye el body del Edge Function según el tipo.
+- **`supabase/functions/_shared/multimodal.ts`** (nuevo, 60 líneas): `callMultimodalLLM` — llama a OpenRouter con content parts multimodal: audio via `input_audio`, imagen/PDF via `image_url` data URL.
+- **`supabase/functions/process-quick-instruct/index.ts`** (148 líneas): Bifurca entre `callMultimodalLLM` (voz/imagen/PDF) y `callPrimaryLLM` (texto). Debug logs eliminados. Desplegado en `rutzgbwziinixdrryirv`.
 
 ## Blockers
 - Ninguno técnico.
 
 ## Próximo paso
-Evaluar si notas de voz y test 1.3 (PDFs) son necesarios para cerrar formalmente Bloque 5.1 con `/phase-done`, o si se mueven a deuda técnica y se avanza a Bloque 5.2 (Inteligencia y resúmenes).
+Bloque 5.1 DoD 100% completo. Ejecutar `/phase-done` y avanzar a Bloque 5.2 (Inteligencia y resúmenes).

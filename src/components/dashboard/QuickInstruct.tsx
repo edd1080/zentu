@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
-import { InputPanel } from "./InputPanel";
+import { InputPanel, type QuickInstructPayload } from "./InputPanel";
 import { ProposalCard, type Proposal, type ConflictingItem } from "./ProposalCard";
 
 interface QuickInstructProps {
@@ -26,7 +26,7 @@ export function QuickInstruct({ businessId, onSuccess }: QuickInstructProps) {
     return data?.id ?? null;
   };
 
-  const processInstruction = async (content: string, files: File[]) => {
+  const processInstruction = async (instructPayload: QuickInstructPayload) => {
     setIsProcessing(true);
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -35,20 +35,39 @@ export function QuickInstruct({ businessId, onSuccess }: QuickInstructProps) {
       const targetBusinessId = await resolveBusinessId();
       if (!targetBusinessId) throw new Error("No se encontró un negocio activo.");
 
-      const payload = {
-        content: content + (files.length > 0 ? ` [Archivos adjuntos: ${files.map(f => f.name).join(', ')}]` : ''),
-        type: files.length > 0 ? (files[0].type.includes('pdf') ? 'pdf' : 'image') : 'text',
-        business_id: targetBusinessId,
-      };
+      let body: Record<string, string | undefined>;
 
-      const { data, error } = await supabase.functions.invoke('process-quick-instruct', { body: payload });
+      if (instructPayload.type === 'voice_note') {
+        body = {
+          type: 'voice_note',
+          audioBase64: instructPayload.audioBase64,
+          mimeType: instructPayload.mimeType,
+          business_id: targetBusinessId,
+        };
+      } else if (instructPayload.type === 'image_ocr' || instructPayload.type === 'pdf') {
+        body = {
+          type: instructPayload.type,
+          fileBase64: instructPayload.fileBase64,
+          mimeType: instructPayload.mimeType,
+          content: instructPayload.content,
+          business_id: targetBusinessId,
+        };
+      } else {
+        body = {
+          type: 'text',
+          content: instructPayload.content,
+          business_id: targetBusinessId,
+        };
+      }
+
+      const { data, error } = await supabase.functions.invoke('process-quick-instruct', { body });
 
       if (error) {
         let errorMsg = error.message || 'Error desconocido';
         try {
           if (error.context && typeof error.context.json === 'function') {
-            const body = await error.context.json();
-            errorMsg = body?.message || body?.error || errorMsg;
+            const errBody = await error.context.json();
+            errorMsg = errBody?.message || errBody?.error || errorMsg;
           }
         } catch (_) { /* ignore */ }
         throw new Error(errorMsg);
@@ -58,7 +77,6 @@ export function QuickInstruct({ businessId, onSuccess }: QuickInstructProps) {
 
       setProposal(data.proposal);
 
-      // Check for conflicting items in same topic+layer (non-critical)
       try {
         const { data: topic } = await supabase
           .from('competency_topics').select('id')
@@ -72,8 +90,9 @@ export function QuickInstruct({ businessId, onSuccess }: QuickInstructProps) {
         }
       } catch (_) { /* ignore */ }
 
-    } catch (err: any) {
-      toast({ type: "error", message: "Error al procesar la instrucción: " + err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error desconocido';
+      toast({ type: "error", message: "Error al procesar la instrucción: " + message });
     } finally {
       setIsProcessing(false);
     }
@@ -91,8 +110,9 @@ export function QuickInstruct({ businessId, onSuccess }: QuickInstructProps) {
       toast({ type: "success", message: "¡Entendido! He aprendido algo nuevo." });
       reset();
       onSuccess?.();
-    } catch (err: any) {
-      toast({ type: "error", message: "No pude guardar la instrucción: " + err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error desconocido';
+      toast({ type: "error", message: "No pude guardar la instrucción: " + message });
     } finally {
       setIsProcessing(false);
     }
