@@ -81,11 +81,44 @@ Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento 
 - **PDFs como KnowledgeItems:** Todo documento (incluyendo PDFs de branding, manuales, etc.) se convierte en un KnowledgeItem `narrative` con el contexto destilado. El agente no guarda el PDF, guarda las reglas/conocimiento esencial extraído por el LLM.
 - **max_tokens PDFs = 1200:** Documentos ricos necesitan más tokens para resumir adecuadamente. Imágenes usan 800.
 
+## Qué se construyó (sesión 2026-03-20 — Bloque 5.2)
+
+### Bloque 5.2 — Inteligencia y resúmenes (completo)
+
+**Backend:**
+- **`supabase/functions/generate-daily-summary/index.ts`** (nuevo, 242 líneas): Edge Function que genera el resumen diario del negocio. Agrega conversaciones por `last_message_at`, calcula métricas (resolvedAutonomous, resolvedOwnerApproved, escalated, pending, minutesSaved), detecta weak topics (knowledge_count=0), construye mensaje WhatsApp en español, envía a `owner.phone_personal` via Meta API, upserta en `daily_summaries`. Desplegada con `--no-verify-jwt`.
+- **`supabase/migrations/20260320000001_schedule_daily_summaries.sql`**: Habilita `pg_cron` + `pg_net`. Función `trigger_daily_summaries()` que itera businesses activos y llama a la Edge Function via `pg_net.http_post`. Schedule: `30 1 * * *` (01:30 UTC = 7:30 PM Guatemala).
+- **`supabase/config.toml`**: `[functions.generate-daily-summary] verify_jwt = false`.
+
+**Frontend:**
+- **`src/app/dashboard/agent/intelligence/page.tsx`** (nuevo): Vista M5.1 + M5.2. Selector de período (semana/mes/todo). Queries por `last_message_at`. 5 ActivitySummaryCards. TrainingOpportunityCards para topics con `knowledge_count=0`. Botón "Enviar resumen de prueba ahora" que invoca la Edge Function directamente.
+- **`src/components/dashboard/ActivitySummaryCard.tsx`** (nuevo): Card de métrica con accent variants (success/warning/info/default).
+- **`src/components/dashboard/TrainingOpportunityCard.tsx`** (nuevo): Card de oportunidad de entrenamiento con link a `/dashboard/agent?train=`.
+- **`src/app/dashboard/agent/page.tsx`**: Agregado entry point "Inteligencia" al fondo de la página.
+
+**Bug crítico corregido:**
+- `generate-daily-summary` y `intelligence/page.tsx` usaban `created_at` para filtrar conversaciones → reportaban "sin actividad". Fix: `last_message_at`.
+
+## Decisiones tomadas (Bloque 5.2)
+
+- **WhatsApp fallback para pruebas:** El número del dueño (`owner.phone_personal`) se usa como receptor del resumen. En producción, cuando WhatsApp Business API esté activo, el mismo número recibe el resumen diario. Sin ventana de servicio activa, Meta API retorna error de "window closed" — aceptable, el resumen se persiste en `daily_summaries` de todas formas.
+- **`last_message_at` como proxy de actividad:** Una conversación existe a lo largo de días. "Actividad hoy" = hubo un mensaje hoy, no que la conversación se creó hoy.
+- **WhatsApp envío best-effort:** Falla de envío no bloquea el upsert del DailySummary. `whatsapp_error` se persiste para debugging.
+- **pg_cron schedule UTC:** 01:30 UTC = 7:30 PM hora de Guatemala (CST, UTC-6). Ajustar si el negocio está en otra zona horaria.
+
+## DoD Bloque 5.1 — COMPLETO ✅
+## DoD Bloque 5.2 — COMPLETO ✅
+
+- [x] `generate-daily-summary` Edge Function funcional y desplegada
+- [x] Resumen generado con métricas reales de conversaciones
+- [x] Envío WhatsApp al número personal del dueño
+- [x] pg_cron programado a 7:30 PM Guatemala
+- [x] Vista M5.1 — métricas de actividad con selector de período
+- [x] Vista M5.2 — oportunidades de entrenamiento (topics sin conocimiento)
+- [x] Botón de prueba manual en UI — verificado end-to-end
+
 ## Blockers
 - Ninguno técnico.
 
-## DoD Bloque 5.1 — COMPLETO ✅
-
 ## Próximo paso
-Bloque 5.2 — Inteligencia y resúmenes.
-DoD 5.2: DailySummary diario 7:30 PM, WhatsApp al dueño, vista M5.1 resumen semanal, vista M5.2 oportunidades de entrenamiento.
+Bloque 5.3 (o siguiente fase) — revisar roadmap.

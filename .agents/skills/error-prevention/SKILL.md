@@ -31,6 +31,11 @@ trigger: always_on
 - ❌ NUNCA hacer `SELECT *` en queries de Supabase.
   - ✅ Siempre especificar las columnas necesarias.
 
+- ❌ NUNCA filtrar conversaciones por `created_at` cuando la intención es "actividad en el período".
+  - ✅ Usar `last_message_at`: una conversación se crea una vez pero puede tener mensajes durante días. `created_at` solo indica cuándo nació, no cuándo hubo actividad.
+  - ✅ Aplica tanto en Edge Functions como en queries del frontend.
+  - 📅 2026-03-20 | `generate-daily-summary` y `intelligence/page.tsx` usaban `created_at` y reportaban "sin actividad" aunque había mensajes nuevos hoy. Fix: cambiar a `.gte("last_message_at", since)`.
+
 - ❌ NUNCA olvidar el filtro `business_id` en cualquier query que toque datos de negocio.
   - ✅ Primer check antes de ejecutar cualquier query: ¿tiene `.eq('business_id', businessId)`?
 

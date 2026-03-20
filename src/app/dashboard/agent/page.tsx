@@ -5,7 +5,7 @@ import { QuickInstruct } from "@/components/dashboard/QuickInstruct";
 import { CompetencyMap } from "@/components/dashboard/CompetencyMap";
 import { HealthCard } from "@/components/dashboard/HealthCard";
 import { Button } from "@/components/ui/Button";
-import { Brain, History, Target, Loader2 } from "lucide-react";
+import { Brain, History, Target, Loader2, BarChart2, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Topic } from "@/components/dashboard/TopicCard";
@@ -135,6 +135,25 @@ export default function AgentPage() {
               onTopicClick={handleTopicClick}
             />
           )}
+        </section>
+
+        {/* Inteligencia — acceso a M5.1 + M5.2 */}
+        <section className="pb-2">
+          <Link
+            href="/dashboard/agent/intelligence"
+            className="flex items-center justify-between px-4 py-3 bg-white border border-(--surface-border) rounded-xl hover:border-(--color-primary-700) hover:bg-emerald-50 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <BarChart2 className="h-4 w-4 text-emerald-700" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-(--text-primary)">Inteligencia</p>
+                <p className="text-xs text-(--text-secondary)">Actividad del agente y oportunidades de mejora</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-(--text-tertiary) group-hover:text-(--color-primary-700) shrink-0" />
+          </Link>
         </section>
 
       </div>
