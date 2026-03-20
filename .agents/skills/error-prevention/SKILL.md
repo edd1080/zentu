@@ -58,7 +58,10 @@ trigger: always_on
   - ✅ Usar `supabase functions list` o herramientas MCP para confirmar que la función está ACTIVE y es accesible.
   - 📅 2026-03-13 | El agente dio por terminada la tarea sin haber desplegado las funciones `process-quick-instruct` y `confirm-instruction`.
 
-- ❌ NUNCA desplegar una Edge Function pública (webhook externo, función interna invocada por otra función) sin `verify_jwt = false` en `config.toml` Y el flag `--no-verify-jwt` en el comando de deploy.
+- ❌ NUNCA desplegar una Edge Function (pública O invocada por cliente autenticado) con `verify_jwt = true`.
+  - ✅ Usar SIEMPRE `verify_jwt = false` en `config.toml` + `--no-verify-jwt` en el deploy. Manejar autenticación manualmente dentro con `supabase.auth.getUser(jwt)`.
+  - ✅ Con `verify_jwt = true`, el gateway de Supabase puede rechazar tokens válidos con 401 antes de que el código corra. No hay forma de depurarlo desde el cliente.
+  - 📅 2026-03-20 | `update-business-profile` devolvía 401 con `verify_jwt = true` aunque el usuario estaba autenticado. Fix: `verify_jwt = false` + autenticación interna.
   - ✅ Dos pasos obligatorios: (1) `[functions.nombre-funcion] verify_jwt = false` en `supabase/config.toml`, y (2) `supabase functions deploy nombre-funcion --no-verify-jwt`.
   - ✅ Si solo se hace uno de los dos, Supabase puede re-habilitar JWT verification al re-desplegar.
   - 📅 2026-03-19 | `whatsapp-webhook` y `process-message` comenzaron a retornar 401 después de redespliegues porque faltaba `verify_jwt = false` en config.toml. Meta no podía verificar el webhook, y process-message recibía 401 de whatsapp-webhook al invocarlo internamente.

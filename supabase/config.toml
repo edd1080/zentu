@@ -359,3 +359,6 @@ verify_jwt = false
 
 [functions.generate-daily-summary]
 verify_jwt = false
+
+[functions.update-business-profile]
+verify_jwt = false

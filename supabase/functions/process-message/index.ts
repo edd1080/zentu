@@ -369,6 +369,18 @@ CLIENTE: ${msgContent}`
                     }
                 }
             } else {
+                // Check for active autonomy rule (autonomous_with_guardrails)
+                const { data: autonomyRules } = await supabase
+                    .from('autonomy_rules')
+                    .select('id')
+                    .eq('business_id', business.id)
+                    .eq('active', true)
+                    .eq('level', 'autonomous_with_guardrails')
+                    .limit(1)
+
+                const hasAutonomy = (autonomyRules?.length ?? 0) > 0
+                const shouldAutoSend = hasAutonomy && confidenceTier === 'high'
+
                 await supabase.from('webhook_queue').update({ error_message: 'TRACE: Inserting Suggestion' }).eq('id', queueId!)
                 const { error: insErr } = await supabase.from('suggestions').insert([{
                     business_id: business.id,
@@ -376,31 +388,44 @@ CLIENTE: ${msgContent}`
                     content: agentOutput.response,
                     confidence: confidenceScore,
                     confidence_tier: confidenceTier,
-                    status: 'pending',
-                    metadata: { 
+                    status: shouldAutoSend ? 'auto_sent' : 'pending',
+                    metadata: {
                         detected_intent: agentOutput.detected_intent,
                         detected_intent_label: agentOutput.detected_intent_label,
-                        knowledge_items_used: agentOutput.knowledge_items_used 
+                        knowledge_items_used: agentOutput.knowledge_items_used
                     }
                 }])
                 if (insErr) throw insErr
 
-                // Update conversation status
-                await supabase.from('conversations').update({ 
-                    status: 'pending_approval' 
-                }).eq('id', conversationId)
-
-                // Trigger push notification for Suggestion (Collaborator Mode)
-                if (ownerOneSignalId && !isNight) {
-                    await supabase.functions.invoke('send-notification', {
-                        body: { 
-                            owner_id: business.owner_id, 
-                            title: `💬 Sugerencia: ${business.name}`, 
-                            body: `AGENTI preparó una respuesta para ${clientName}.`,
-                            action_url: "http://localhost:3001/dashboard"
-                        },
+                if (shouldAutoSend) {
+                    // Send message directly to client and resolve conversation
+                    await supabase.functions.invoke('send-message', {
+                        body: { conversation_id: conversationId, content: agentOutput.response, sender_type: 'agent' },
                         headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
                     })
+                    await supabase.from('conversations').update({
+                        status: 'resolved',
+                        resolved_by: 'agent_autonomous',
+                        last_message_at: new Date().toISOString(),
+                    }).eq('id', conversationId)
+                } else {
+                    // Collaborator mode: queue for owner approval
+                    await supabase.from('conversations').update({
+                        status: 'pending_approval'
+                    }).eq('id', conversationId)
+
+                    // Push notification for Suggestion
+                    if (ownerOneSignalId && !isNight) {
+                        await supabase.functions.invoke('send-notification', {
+                            body: {
+                                owner_id: business.owner_id,
+                                title: `💬 Sugerencia: ${business.name}`,
+                                body: `AGENTI preparó una respuesta para ${clientName}.`,
+                                action_url: "http://localhost:3001/dashboard"
+                            },
+                            headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+                        })
+                    }
                 }
             }
         }
