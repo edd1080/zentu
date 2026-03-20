@@ -43,7 +43,7 @@ Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento 
 - [x] M3.3 Historial de aprendizaje completo
 - [x] Revertir instrucción desde historial refleja en mapa en tiempo real
 - [x] Notas de voz (grabación real — MediaRecorder + base64 → Gemini multimodal)
-- [x] Test 1.3 PDFs/imágenes end-to-end (FileReader base64 → Gemini image_url)
+- [x] Test 1.3 PDFs/imágenes end-to-end — verificado con imagen (✅) y PDF (✅ tras fix de modelo y UX)
 
 ## Qué se construyó (sesión 2026-03-19 — continuación)
 
@@ -54,8 +54,38 @@ Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento 
 - **`supabase/functions/_shared/multimodal.ts`** (nuevo, 60 líneas): `callMultimodalLLM` — llama a OpenRouter con content parts multimodal: audio via `input_audio`, imagen/PDF via `image_url` data URL.
 - **`supabase/functions/process-quick-instruct/index.ts`** (148 líneas): Bifurca entre `callMultimodalLLM` (voz/imagen/PDF) y `callPrimaryLLM` (texto). Debug logs eliminados. Desplegado en `rutzgbwziinixdrryirv`.
 
+## Qué se construyó (sesión 2026-03-20)
+
+### Fixes post-cierre Bloque 5.1 — Multimodal PDF + UX InputPanel
+
+**Bug 1 — PDF Bad Request:**
+- `callMultimodalLLM` enviaba PDFs a `openai/gpt-4o-mini` vía Azure, que no soporta `application/pdf` en `image_url`.
+- Fix: PDFs ahora usan `google/gemini-2.0-flash-001` (configurable vía `LLM_MULTIMODAL_MODEL`).
+- `max_tokens` subido a 1200 para PDFs (vs 800 para imágenes).
+- Agregado strip de markdown fences antes de `JSON.parse` (Gemini a veces devuelve ```json...```).
+- `process-quick-instruct`: `mediaKind` ahora distingue `'pdf'` de `'image'` correctamente.
+
+**Bug 2 — UX InputPanel:**
+- El panel colapsaba y limpiaba el texto inmediatamente al hacer submit (antes de que `isProcessing` se activara).
+- Fix: estado (content, attachedFiles, isExpanded) se limpia solo cuando `isProcessing` vuelve a `false` via `wasProcessingRef`.
+- Agregado `loadingFileNames`: chip con spinner aparece inmediatamente al seleccionar archivo (nombre disponible de forma síncrona). Submit deshabilitado mientras FileReader procesa.
+
+**Archivos modificados:**
+- `supabase/functions/_shared/multimodal.ts` — PDF model routing, max_tokens, fence stripping
+- `supabase/functions/process-quick-instruct/index.ts` — mediaKind 'pdf'
+- `src/components/dashboard/InputPanel.tsx` — deferred cleanup + loadingFileNames chip
+
+## Decisiones tomadas (2026-03-20)
+
+- **Modelo para PDFs:** `google/gemini-2.0-flash-001` hardcoded como fallback para PDFs vía `LLM_MULTIMODAL_MODEL`. Configurable sin cambio de código.
+- **PDFs como KnowledgeItems:** Todo documento (incluyendo PDFs de branding, manuales, etc.) se convierte en un KnowledgeItem `narrative` con el contexto destilado. El agente no guarda el PDF, guarda las reglas/conocimiento esencial extraído por el LLM.
+- **max_tokens PDFs = 1200:** Documentos ricos necesitan más tokens para resumir adecuadamente. Imágenes usan 800.
+
 ## Blockers
 - Ninguno técnico.
 
+## DoD Bloque 5.1 — COMPLETO ✅
+
 ## Próximo paso
-Bloque 5.1 DoD 100% completo. Ejecutar `/phase-done` y avanzar a Bloque 5.2 (Inteligencia y resúmenes).
+Bloque 5.2 — Inteligencia y resúmenes.
+DoD 5.2: DailySummary diario 7:30 PM, WhatsApp al dueño, vista M5.1 resumen semanal, vista M5.2 oportunidades de entrenamiento.

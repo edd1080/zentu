@@ -2,12 +2,16 @@ export async function callMultimodalLLM(
   systemPrompt: string,
   mediaBase64: string,
   mediaMimeType: string,
-  mediaKind: 'audio' | 'image'
+  mediaKind: 'audio' | 'image' | 'pdf'
 ): Promise<string> {
   const apiKey = Deno.env.get("LLM_PRIMARY_API_KEY")
   if (!apiKey) throw new Error("LLM_PRIMARY_API_KEY is not set")
 
-  const model = Deno.env.get("LLM_PRIMARY_MODEL") || "google/gemini-2.5-flash"
+  // PDFs require a model that supports them natively (Gemini). Images/audio use the primary model.
+  const isPdf = mediaKind === 'pdf'
+  const model = isPdf
+    ? (Deno.env.get("LLM_MULTIMODAL_MODEL") || "google/gemini-2.0-flash-001")
+    : (Deno.env.get("LLM_PRIMARY_MODEL") || "google/gemini-2.5-flash")
 
   const userContent: unknown[] = []
 
@@ -17,6 +21,7 @@ export async function callMultimodalLLM(
       input_audio: { data: mediaBase64, format: mediaMimeType.split('/')[1] || 'webm' }
     })
   } else {
+    // Both images and PDFs use image_url format; Gemini supports PDF mime type natively
     userContent.push({
       type: "image_url",
       image_url: { url: `data:${mediaMimeType};base64,${mediaBase64}` }
@@ -28,6 +33,9 @@ export async function callMultimodalLLM(
     text: "Analiza el contenido multimedia y genera la propuesta estructurada."
   })
 
+  // PDFs and images may need more tokens to summarize rich content
+  const maxTokens = isPdf ? 1200 : 800
+
   const payload = {
     model,
     messages: [
@@ -35,7 +43,7 @@ export async function callMultimodalLLM(
       { role: "user", content: userContent }
     ],
     temperature: 0.3,
-    max_tokens: 600,
+    max_tokens: maxTokens,
     response_format: { type: "json_object" }
   }
 
@@ -56,5 +64,7 @@ export async function callMultimodalLLM(
   }
 
   const data = await response.json()
-  return data.choices?.[0]?.message?.content || ""
+  const raw = data.choices?.[0]?.message?.content || ""
+  // Strip markdown fences in case the model wraps JSON in ```json ... ```
+  return raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()
 }

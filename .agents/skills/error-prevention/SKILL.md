@@ -79,6 +79,19 @@ trigger: always_on
 - ❌ NUNCA asumir que el output del LLM es JSON válido.
   - ✅ Siempre envolver el parsing en try/catch. Si falla → Escalation informative, no romper el pipeline.
 
+- ❌ NUNCA enviar un PDF como `image_url` a un modelo OpenAI/Azure.
+  - ✅ PDFs requieren un modelo que los soporte nativamente (Gemini). Usar `google/gemini-2.0-flash-001` o superior via OpenRouter.
+  - ✅ Imágenes y PDFs se envían con `image_url` + `data:mime;base64,...` — pero el MODELO debe ser Gemini para PDFs.
+  - 📅 2026-03-20 | `callMultimodalLLM` enviaba PDFs a `openai/gpt-4o-mini` (Azure), que devuelve 400 "Invalid image URL". Fix: bifurcar por `mediaKind === 'pdf'` y usar `LLM_MULTIMODAL_MODEL` (default `google/gemini-2.0-flash-001`).
+
+- ❌ NUNCA confiar en que el LLM devuelva JSON puro sin fences de markdown.
+  - ✅ Siempre limpiar la respuesta antes de `JSON.parse`: `raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()`
+  - 📅 2026-03-20 | `callMultimodalLLM` fallaba con "Error procesando la respuesta" porque Gemini devuelve ```json...``` en algunos casos.
+
+- ❌ NUNCA marcar como `[x]` en el DoD un criterio que no se haya probado end-to-end manualmente.
+  - ✅ El criterio solo se marca como completo cuando se ejecuta el flujo completo y se confirma el resultado (KnowledgeItem creado, UI actualizada, etc.).
+  - 📅 2026-03-20 | "Test 1.3 PDFs/imágenes" fue marcado como completo sin haber probado con un archivo real. Se detectó al hacer el test — había bugs en modelo y UX.
+
 - ❌ NUNCA cachear el Bloque 5 del prompt (historial de conversación).
   - ✅ Bloques 1-4 se cachean por `business_id`. Bloque 5 siempre real-time.
 

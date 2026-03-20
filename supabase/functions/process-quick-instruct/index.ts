@@ -120,7 +120,7 @@ FORMATO DE SALIDA (JSON):
     let llmContent: string
     if (isMultimodal) {
       const mediaBase64 = type === 'voice_note' ? audioBase64 : fileBase64
-      const mediaKind: 'audio' | 'image' = type === 'voice_note' ? 'audio' : 'image'
+      const mediaKind: 'audio' | 'image' | 'pdf' = type === 'voice_note' ? 'audio' : type === 'pdf' ? 'pdf' : 'image'
       llmContent = await callMultimodalLLM(systemPrompt, mediaBase64, mimeType, mediaKind)
     } else {
       const llmResponse = await callPrimaryLLM(systemPrompt, "Genera la propuesta estructurada ahora.", { responseFormat: "json_object" })

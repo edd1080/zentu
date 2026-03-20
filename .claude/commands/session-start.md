@@ -8,16 +8,20 @@ description: >
 
 Sigue estos pasos al iniciar la sesión:
 
-1. Leer `.planning/STATE.md` y reportar:
-   - Fase activa y bloque activo
-   - Último trabajo realizado
-   - Blockers pendientes
-   - Decisiones tomadas desde la última actualización
+1. **Recuperar Contexto Maestro**:
+   - Leer `.planning/STATE.md` para entender: Fase activa, bloque, últimos cambios y blockers.
+   - Leer `tasks/lessons.md` y `.claude/skills/error-prevention/SKILL.md` para evitar repetir errores.
 
-2. Leer el Definition of Done del bloque activo en `docs/development-plan.md`.
+2. **Verificar Objetivos del Bloque**:
+   - Leer el Definition of Done (DoD) del bloque activo en `docs/development-plan.md`.
+   - Revisar el Roadmap en `.planning/ROADMAP.md` si es necesario mayor detalle.
 
-3. Identificar qué documentos de referencia son relevantes para el bloque actual (usar tabla del CLAUDE.md).
+3. **Consultar Documentación**:
+   - Ejecutar `/check-docs` para identificar qué archivos en `docs/` son aplicables hoy.
 
-4. Confirmar el plan para esta sesión en una sola línea: "Vamos a construir [qué] para completar [bloque]. DoD: [criterio principal]."
+4. **Declaración de Intenciones**:
+   - Formular un "Plan de sesión" estructurado con objetivos claros.
+   - Confirmar el plan: "Vamos a construir [qué] para completar [bloque]. DoD: [criterio principal]."
 
-5. Preguntar si hay algo que haya cambiado desde la última sesión antes de empezar.
+5. **Sincronización Final**:
+   - Preguntar al usuario si hay cambios de dirección o prioridades antes de empezar.

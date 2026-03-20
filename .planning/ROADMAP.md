@@ -80,6 +80,22 @@ Principio: de adentro hacia afuera (DB → backend → motor → frontend).
 | 7.1 | Observabilidad y monitoring | Dashboard interno de estado de todos los negocios; alertas de token inválido; costo LLM por mensaje documentado |
 | 7.2 | Onboarding concierge | Protocolo de acompañamiento documentado; script de verificación de calidad para primeros 3 días |
 
+
+---
+
+## Milestone 2 — Producto Completo (Post-MVP)
+
+| Fase | Nombre | Objetivo |
+|---|---|---|
+| 8 | Onboarding de siguiente nivel | Captura de contexto enriquecida (PDF, links, audio largo), plantillas profundas y UX fluida. |
+| 9 | Monetización y billing | Estructura de planes, límites, integración con Stripe y soporte local. |
+| 10 | Edge cases y resiliencia | Manejo de idiomas mixtos, mensajes multimedia, compresión de contexto y downtime fallback. |
+| 11 | UI/UX polish y microanimaciones | Sistema de movimiento intencional, haptic feedback, refactor de bandeja y home. |
+| 12 | PWA + Integración Landing | App instalable, SEO completo, demo interactiva y dominio definitivo. |
+| 13 | Performance y escalabilidad | Optimización de DB, pipeline latency y Core Web Vitals. |
+| 14 | Retención y crecimiento | Detector de churn, resúmenes semanales automáticos y programa de referidos. |
+| 15 | Meta producción completa | Verificación de negocio, App Review oficial y migración final de pilotos. |
+
 ---
 
 ## Criterio de avance entre fases

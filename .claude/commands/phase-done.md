@@ -10,7 +10,7 @@ Ejecuta este protocolo de verificación antes de marcar un bloque como completo:
 
 ## 1. Leer el DoD
 
-Abrir `docs/development-plan.md` y localizar el Definition of Done del bloque actual.
+Abrir `docs/development-plan.md` (o `.planning/ROADMAP.md`) y localizar el Definition of Done del bloque actual.
 Listar cada criterio del DoD explícitamente.
 
 ## 2. Verificar cada criterio
@@ -24,6 +24,7 @@ Para cada criterio del DoD:
 
 Independientemente del DoD específico:
 - `npx tsc --noEmit` — sin errores de tipos
+- **Regla de 150 líneas**: Sin archivos mayores a 150 líneas (refactorizar si es necesario)
 - Sin `console.log` de debug en código que va a producción
 - Sin `TODO` o `FIXME` sin issue asociado
 - Todas las variables de entorno usadas existen en `.env.example`

@@ -35,8 +35,10 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
   const [isRecording, setIsRecording] = React.useState(false);
   const [recordingTime, setRecordingTime] = React.useState(0);
   const [attachedFiles, setAttachedFiles] = React.useState<FileAttachment[]>([]);
+  const [loadingFileNames, setLoadingFileNames] = React.useState<string[]>([]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const wasProcessingRef = React.useRef(false);
 
   const { startRecording, stopRecording } = useVoiceRecorder({
     onSubmit,
@@ -55,13 +57,27 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
     return () => clearInterval(id);
   }, [isRecording]);
 
+  // Collapse and reset only after processing finishes (not immediately on submit)
+  React.useEffect(() => {
+    if (isProcessing) { wasProcessingRef.current = true; return; }
+    if (wasProcessingRef.current) {
+      wasProcessingRef.current = false;
+      setContent("");
+      setAttachedFiles([]);
+      setLoadingFileNames([]);
+      setIsExpanded(false);
+    }
+  }, [isProcessing]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     Array.from(e.target.files).forEach(file => {
+      setLoadingFileNames(prev => [...prev, file.name]);
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = (reader.result as string).split(",")[1];
         setAttachedFiles(prev => [...prev, { file, base64, mimeType: file.type }]);
+        setLoadingFileNames(prev => prev.filter(n => n !== file.name));
       };
       reader.readAsDataURL(file);
     });
@@ -69,7 +85,7 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
   };
   const handleFocus = () => { setIsExpanded(true); setTimeout(() => textareaRef.current?.focus(), 50); };
   const handleBlur = (e: React.FocusEvent) => {
-    if (!content && attachedFiles.length === 0 && !e.currentTarget.contains(e.relatedTarget)) { setIsExpanded(false); setIsRecording(false); }
+    if (!content && attachedFiles.length === 0 && loadingFileNames.length === 0 && !isProcessing && !e.currentTarget.contains(e.relatedTarget)) { setIsExpanded(false); setIsRecording(false); }
   };
   const handleSubmit = () => {
     if (!content.trim() && attachedFiles.length === 0) return;
@@ -80,7 +96,7 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
     } else {
       onSubmit({ type: "text", content: content.trim() });
     }
-    setContent(""); setAttachedFiles([]); setIsExpanded(false);
+    // content, attachedFiles y collapse se limpian cuando isProcessing vuelve a false
   };
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
@@ -116,8 +132,14 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
               onFocus={handleFocus}
               disabled={isProcessing}
             />
-            {attachedFiles.length > 0 && (
+            {(attachedFiles.length > 0 || loadingFileNames.length > 0) && (
               <div className="flex flex-wrap gap-2 px-3 pb-2">
+                {loadingFileNames.map(name => (
+                  <div key={`loading-${name}`} className="flex items-center gap-1.5 bg-(--surface-muted) px-2 py-1 rounded-md border border-(--surface-border) opacity-60">
+                    <Loader2 className="h-3 w-3 animate-spin text-(--text-tertiary)" />
+                    <span className="text-xs font-medium text-(--text-secondary) truncate max-w-[150px]">{name}</span>
+                  </div>
+                ))}
                 {attachedFiles.map((fa, i) => (
                   <div key={i} className="flex items-center gap-1.5 bg-(--surface-muted) px-2 py-1 rounded-md border border-(--surface-border)">
                     <span className="text-xs font-medium text-(--text-secondary) truncate max-w-[150px]">{fa.file.name}</span>
@@ -139,7 +161,7 @@ export function InputPanel({ isProcessing, onSubmit }: InputPanelProps) {
           <div className="flex items-center gap-2 ml-auto">
             {!isExpanded && <button className="p-2 text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-muted) rounded-lg transition-colors" onClick={e => { e.preventDefault(); startRecording(); }} type="button" disabled={isProcessing}><Mic className="h-5 w-5" /></button>}
             {isExpanded && !isProcessing && <span className="text-xs text-(--text-tertiary) mr-2">{content.length}/500</span>}
-            <button onClick={handleSubmit} disabled={(!content.trim() && attachedFiles.length === 0) || isProcessing} className={cn("flex h-9 w-9 items-center justify-center rounded-full transition-all", (content.trim() || attachedFiles.length > 0) ? "bg-(--color-primary-700) text-white hover:bg-(--color-primary-800)" : "bg-(--surface-muted) text-(--text-disabled)", !isExpanded && "hidden")}>
+            <button onClick={handleSubmit} disabled={(!content.trim() && attachedFiles.length === 0) || isProcessing || loadingFileNames.length > 0} className={cn("flex h-9 w-9 items-center justify-center rounded-full transition-all", (content.trim() || attachedFiles.length > 0) ? "bg-(--color-primary-700) text-white hover:bg-(--color-primary-800)" : "bg-(--surface-muted) text-(--text-disabled)", !isExpanded && "hidden")}>
               {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
             </button>
           </div>
