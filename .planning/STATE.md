@@ -117,8 +117,55 @@ Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento 
 - [x] Vista M5.2 — oportunidades de entrenamiento (topics sin conocimiento)
 - [x] Botón de prueba manual en UI — verificado end-to-end
 
+## Qué se construyó (sesión 2026-03-20 — Bloque 5.3)
+
+### Bloque 5.3 — Configuración avanzada (completo)
+
+**Migración SQL:**
+- `20260320000002_settings_columns.sql`: columnas de notificaciones en `businesses` (`notification_hour`, `quiet_hours_start`, `quiet_hours_end`, `notify_training_alerts`). `knowledge_count` en `competency_topics`. `refresh_competency_coverage` actualizado para mantener `knowledge_count`.
+
+**Edge Functions:**
+- `supabase/functions/update-business-profile/index.ts` (nuevo): guarda campos del perfil, detecta cambio en `schedule`, crea KnowledgeItem `structured` e invalida `agent_context_cache`. Auth via `supabase.auth.getUser(jwt)`. Desplegada con `--no-verify-jwt`.
+- `supabase/functions/process-message/index.ts` (modificado): lee `autonomy_rules` activas. Si hay regla activa + `confidence_tier === 'high'` → crea Suggestion con `status = auto_sent`, envía mensaje directamente vía `send-message`, resuelve conversación como `agent_autonomous`.
+
+**Pages:**
+- `src/app/dashboard/settings/page.tsx` — hub de ajustes (5 ítems navegables)
+- `src/app/dashboard/settings/profile/page.tsx` — M4.1 perfil con modo lectura/edición + horario
+- `src/app/dashboard/settings/autonomy/page.tsx` — M4.3 indicadores de madurez + toggle Nivel 0/1
+- `src/app/dashboard/settings/whatsapp/page.tsx` — M4.4 estado de conexión + desconectar
+- `src/app/dashboard/settings/notifications/page.tsx` — M4.5 hora resumen, silencio, toggle, autosave
+- `src/app/dashboard/settings/plan/page.tsx` — uso del mes con barra de progreso
+
+**Componentes extraídos:**
+- `src/components/dashboard/ScheduleEditor.tsx` — editor de horarios reutilizable
+- `src/components/dashboard/TopicAutonomyCard.tsx` — card de autonomía con indicadores
+
+## Decisiones tomadas (Bloque 5.3)
+
+- **`verify_jwt = false` para TODAS las Edge Functions:** incluso las invocadas por el cliente autenticado. El gateway de Supabase puede rechazar tokens válidos con `verify_jwt = true`. Siempre manejar auth internamente con `supabase.auth.getUser(jwt)`.
+- **Autonomía simplificada (MVP):** Si ANY `autonomy_rule` del negocio está activa + `confidence_tier = high` → auto-send. No se mapea intent a topic_id (no disponible con certeza del LLM). Suficiente para MVP.
+- **`knowledge_count` como columna**: añadida a `competency_topics` en migración + backfill + mantenimiento en `refresh_competency_coverage`. Antes era calculada solo en el cliente.
+- **Regla 150 líneas cumplida**: autonomy y profile refactorizados extrayendo `TopicAutonomyCard` y `ScheduleEditor`.
+
+## DoD Bloque 5.1 — COMPLETO ✅
+## DoD Bloque 5.2 — COMPLETO ✅
+## DoD Bloque 5.3 — COMPLETO ✅
+
+- [x] Cambiar horario en M4.1 crea KnowledgeItem structured e invalida caché — verificado end-to-end
+- [x] Indicadores de madurez en M4.3 muestran datos reales (25% → bloqueado correctamente)
+- [x] Activar Nivel 1 → cambia comportamiento de process-message (lógica desplegada)
+- [x] M4.4 muestra estado real de conexión, desconectar no toca KnowledgeItems
+- [x] Tag `block-5.3-complete` creado
+
+## Fase 5 — COMPLETA ✅ (Bloques 5.1, 5.2, 5.3)
+
 ## Blockers
 - Ninguno técnico.
 
 ## Próximo paso
-Bloque 5.3 (o siguiente fase) — revisar roadmap.
+**Fase 6 — Bloque 6.1: Migración a Meta producción.**
+- Salir de sandbox de Meta (App modo live)
+- Configurar dominio de producción en webhook de Meta
+- Crear y aprobar Message Templates de WhatsApp
+- Verificar Embedded Signup con App en modo live
+- Test end-to-end con número real de negocio
