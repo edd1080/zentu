@@ -11,31 +11,34 @@ import {
   Settings,
 } from "lucide-react";
 import { Divider } from "@/components/ui/Divider";
+import { useNavCounts } from "./NavCountsContext";
 
-const navItems = [
-  { name: "Inicio", href: "/dashboard", icon: Home, badge: 0 },
-  { name: "Conversaciones", href: "/dashboard/conversations", icon: MessageSquare, badge: 3 },
-  { name: "Agente", href: "/dashboard/agent", icon: Bot, badge: 1 },
-  { name: "Entrenar", href: "/dashboard/train", icon: BrainCircuit, badge: 0 },
+const navItemDefs = [
+  { name: "Inicio", href: "/dashboard", icon: Home, countKey: null },
+  { name: "Conversaciones", href: "/dashboard/conversations", icon: MessageSquare, countKey: "conversations" as const },
+  { name: "Agente", href: "/dashboard/agent", icon: Bot, countKey: "agent" as const },
+  { name: "Entrenar", href: "/dashboard/train", icon: BrainCircuit, countKey: null },
 ];
 
-const bottomItem = { name: "Ajustes", href: "/dashboard/settings", icon: Settings, badge: 0 };
+const bottomItemDef = { name: "Ajustes", href: "/dashboard/settings", icon: Settings };
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const counts = useNavCounts();
 
   return (
     <aside className="hidden md:flex w-[240px] flex-col bg-(--surface-card) border-r border-(--surface-border) shrink-0 h-full">
       <div className="flex h-14 items-center px-6">
         <span className="font-display italic text-2xl text-(--color-primary-700)">Agenti</span>
       </div>
-      
+
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = item.href === '/dashboard' 
-            ? pathname === item.href 
+        {navItemDefs.map((item) => {
+          const isActive = item.href === '/dashboard'
+            ? pathname === item.href
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
-            
+          const badge = item.countKey ? counts[item.countKey] : 0;
+
           return (
             <Link
               key={item.href}
@@ -49,7 +52,7 @@ export function AppSidebar() {
             >
               <item.icon className={cn("h-5 w-5", isActive ? "fill-(--color-primary-100)" : "")} />
               {item.name}
-              {item.badge > 0 && (
+              {badge > 0 && (
                 <div className="absolute left-[22px] top-[8px] h-2 w-2 rounded-full bg-(--color-error-500) outline-2 outline-white" />
               )}
             </Link>
@@ -60,16 +63,16 @@ export function AppSidebar() {
       <div className="p-3">
         <Divider />
         <Link
-          href={bottomItem.href}
+          href={bottomItemDef.href}
           className={cn(
             "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors mt-2",
-            pathname === bottomItem.href || pathname.startsWith(`${bottomItem.href}/`)
+            pathname === bottomItemDef.href || pathname.startsWith(`${bottomItemDef.href}/`)
               ? "bg-(--color-primary-50) text-(--color-primary-700)"
               : "text-(--text-secondary) hover:bg-(--surface-muted) hover:text-(--text-primary)"
           )}
         >
-          <bottomItem.icon className="h-5 w-5" />
-          {bottomItem.name}
+          <bottomItemDef.icon className="h-5 w-5" />
+          {bottomItemDef.name}
         </Link>
       </div>
     </aside>
@@ -78,22 +81,24 @@ export function AppSidebar() {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const counts = useNavCounts();
 
   // Hide on conversation thread view to give more space
   if (pathname.includes("/conversations/")) {
     return null;
   }
 
-  const allItems = [...navItems, bottomItem];
+  const allItemDefs = [...navItemDefs, { ...bottomItemDef, countKey: null }];
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-(--surface-card) border-t border-(--surface-border) pb-safe">
       <div className="flex h-14 items-center justify-around px-2">
-        {allItems.map((item) => {
-          const isActive = item.href === '/dashboard' 
-            ? pathname === item.href 
+        {allItemDefs.map((item) => {
+          const isActive = item.href === '/dashboard'
+            ? pathname === item.href
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
-            
+          const badge = item.countKey ? counts[item.countKey] : 0;
+
           return (
             <Link
               key={item.href}
@@ -105,7 +110,7 @@ export function MobileNav() {
             >
               <div className="relative">
                 <item.icon className={cn("h-6 w-6 mb-1", isActive ? "fill-(--color-primary-100)" : "")} />
-                {item.badge > 0 && (
+                {badge > 0 && (
                   <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-(--color-error-500) outline-[1.5px] outline-solid outline-white" />
                 )}
               </div>

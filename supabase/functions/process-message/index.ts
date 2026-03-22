@@ -89,7 +89,7 @@ serve(async (req: Request) => {
         }
 
         // 3. Find or Create Conversation
-        let conversationId
+        let conversationId: string
         const { data: activeConv } = await supabase
             .from('conversations')
             .select('id, status')
@@ -119,8 +119,27 @@ serve(async (req: Request) => {
                 .select('id')
                 .single()
 
-            if (convError) throw convError
-            conversationId = newConv.id
+            if (convError) {
+                // 23505 = unique_violation: race condition — another process created the conversation first
+                if (convError.code === '23505') {
+                    console.log(`Race condition detected for phone ${clientPhone}, re-fetching conversation`)
+                    const { data: racedConv, error: fetchErr } = await supabase
+                        .from('conversations')
+                        .select('id')
+                        .eq('business_id', business.id)
+                        .eq('client_phone', clientPhone)
+                        .neq('status', 'archived')
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .single()
+                    if (fetchErr || !racedConv) throw fetchErr || new Error('Could not create or find conversation')
+                    conversationId = racedConv.id
+                } else {
+                    throw convError
+                }
+            } else {
+                conversationId = newConv!.id
+            }
         }
 
         // 4. Insert Message
@@ -144,6 +163,11 @@ serve(async (req: Request) => {
             }
             throw msgInsertError
         }
+
+        // Update last_message_at on the conversation so dashboard ordering is correct
+        await supabase.from('conversations')
+            .update({ last_message_at: timestampStr })
+            .eq('id', conversationId)
 
         // Notification Info Fetch
         const { data: owner } = await supabase.from('owners').select('id, onesignal_id').eq('id', business.owner_id).single()

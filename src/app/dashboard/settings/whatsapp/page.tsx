@@ -14,8 +14,8 @@ const STATUS_CFG: Record<WStatus, { label: string; color: string; bg: string; Ic
   connected:     { label: "Conectado",        color: "text-emerald-700",           bg: "bg-emerald-100",       Icon: Wifi },
   disconnected:  { label: "Desconectado",     color: "text-(--text-tertiary)",     bg: "bg-(--surface-muted)", Icon: WifiOff },
   connecting:    { label: "Conectando…",      color: "text-amber-600",             bg: "bg-amber-100",         Icon: Loader2 },
-  expired:       { label: "Token expirado",   color: "text-(--color-error-600)",   bg: "bg-red-100",           Icon: AlertTriangle },
-  error:         { label: "Error de conexión",color: "text-(--color-error-600)",   bg: "bg-red-100",           Icon: AlertTriangle },
+  expired:       { label: "Token expirado",   color: "text-(--color-error-700)",   bg: "bg-red-100",           Icon: AlertTriangle },
+  error:         { label: "Error de conexión",color: "text-(--color-error-700)",   bg: "bg-red-100",           Icon: AlertTriangle },
 };
 
 export default function WhatsAppPage() {

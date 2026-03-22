@@ -9,6 +9,20 @@
 
 ---
 
+## 2026-03-21 - Performance / Caching
+
+**Observación**: Una app Next.js sin ninguna capa de caché de datos en el cliente se siente lenta incluso si el código es correcto. Cada navegación dispara queries nuevas — el usuario percibe lag.
+
+**Patrón detectado**: Definir hooks de datos localmente en componentes de layout que se montan varias veces crea ráfagas de queries duplicadas silenciosas.
+
+**Regla**: En apps con múltiples componentes en el mismo layout que necesitan los mismos datos → Context Provider + TanStack Query. Datos compartidos = una sola ejecución.
+
+**Sobre TanStack Query vs SWR**: TanStack Query es la elección correcta cuando el proyecto tiene mutations + cache invalidation explícita. `queryClient.invalidateQueries(key)` desde realtime handlers es el patrón limpio para sincronizar datos en tiempo real sin polling manual.
+
+**Applied**: Cualquier dato que se use en más de un componente o que necesite invalidarse tras una mutation.
+
+---
+
 ## 2026-03-13 - Testing / Tooling
 
 **Mistake**: Indicar al usuario que el desarrollo de Edge Functions estaba listo sin haberlas desplegado realmente al proyecto de Supabase ni verificado su correcto acceso.

@@ -81,7 +81,7 @@ export function AgentSuggestionWidget({
 
             <Button
               variant="primary"
-              className="h-[48px] bg-(--color-success-600) hover:bg-(--color-success-700) focus-visible:ring-(--color-success-600)"
+              className="h-[48px] bg-(--color-success-700) hover:bg-green-800 focus-visible:ring-(--color-success-700)"
               onClick={onApprove}
               isLoading={isProcessing}
             >

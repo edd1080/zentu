@@ -109,6 +109,23 @@ trigger: always_on
   - ✅ Usar `dotenv.config({ path: ".env.local" })` — Next.js usa `.env.local` para secretos, no `.env`.
   - 📅 2026-03-09 | El smoke test no cargaba las API keys porque dotenv buscaba `.env` por defecto.
 
+## Frontend / React
+
+- ❌ NUNCA definir un hook de datos localmente en un componente que se monta múltiples veces dentro del mismo layout.
+  - ✅ Si el mismo dato es necesario en 2+ componentes del layout (ej. nav badges), extraer a un Context Provider que corra una sola vez.
+  - 📅 2026-03-21 | `useNavCounts()` definido localmente en `AppNavigation.tsx` era llamado por `AppSidebar` y `MobileNav` — disparaba 4 queries Supabase en cada mount. Fix: `NavCountsContext` + `NavCountsProvider` en el layout.
+
+- ❌ NUNCA usar una CSS variable en `bg-(--var)` o `text-(--var)` sin verificar primero que esté definida en `globals.css`.
+  - ✅ Variables no definidas renderizan transparent/invisible en Tailwind v4 sin error de compilación — bug silencioso visual.
+  - 📅 2026-03-21 | `--color-success-600` y `--color-error-600` no existían → botón "Aprobar" renderizaba blanco (texto blanco sobre fondo transparente).
+
+- ❌ NUNCA hacer `select('*')` en queries del frontend sin filtro `business_id`.
+  - ✅ Siempre seleccionar solo las columnas necesarias + `.eq('business_id', biz.id)` como primer filtro.
+  - 📅 2026-03-21 | `conversations/page.tsx` hacía `select('*')` sin filtro → traía todas las conversaciones de la DB.
+
+- ❌ NUNCA manejar realtime con un `fetchAll()` manual dentro del callback del canal.
+  - ✅ Con TanStack Query: el callback de realtime debe solo llamar `queryClient.invalidateQueries({ queryKey: [...] })`. TanStack maneja el refetch con deduplicación automática.
+
 ## TypeScript
 
 - ❌ NUNCA usar `any`, `@ts-ignore` o `as unknown as X`.

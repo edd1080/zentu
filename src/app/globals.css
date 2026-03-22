@@ -38,6 +38,7 @@
 
   /* --- Superficies --- */
   --surface-background: #FAFAF9;
+  --surface-base: #FAFAF9;
   --surface-card: #FFFFFF;
   --surface-elevated: #FFFFFF;
   --surface-muted: #F5F5F4;
@@ -128,8 +129,13 @@ body {
   scrollbar-color: var(--surface-border-strong) transparent;
 }
 
-/* --- Focus visible para accesibilidad --- */
-*:focus-visible {
+/* --- Focus visible para accesibilidad (excluye inputs que manejan su propio ring) --- */
+*:focus-visible:not(input):not(textarea):not(select) {
   outline: 2px solid var(--color-primary-700);
   outline-offset: 2px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }

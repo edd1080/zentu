@@ -159,11 +159,91 @@ Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento 
 
 ## Fase 5 — COMPLETA ✅ (Bloques 5.1, 5.2, 5.3)
 
+## Qué se construyó (sesión 2026-03-21)
+
+### Corrección de bugs críticos + pantalla Entrenar
+
+**B1 — Home con datos hardcodeados:**
+- `src/app/dashboard/page.tsx`: reescritura completa con queries reales a Supabase. Stats reales via `Promise.all`. Conversaciones recientes desde `conversations` ordenadas por `last_message_at DESC`.
+
+**B2 — Duplicación de conversaciones en bandeja:**
+- Root cause: sin constraint único en `(business_id, client_phone)` → race condition al llegar 2 mensajes simultáneos del mismo número creaba 2 conversaciones.
+- `supabase/migrations/20260321000001_unique_active_conversation_per_phone.sql`: archiva duplicados existentes + crea `UNIQUE INDEX ... WHERE status != 'archived'`.
+- `supabase/functions/process-message/index.ts`: maneja `23505` unique violation re-fetching la conversación existente. También agrega update de `last_message_at` al recibir mensaje entrante.
+
+**B3 — Chat no hace scroll al último mensaje:**
+- `src/app/dashboard/conversations/[id]/page.tsx`: `messagesEndRef` + `useEffect([messages])` con `scrollIntoView`.
+
+**B4 — Botón "Aprobar" en sugerencia blanco/invisible:**
+- `src/components/dashboard/AgentSuggestionWidget.tsx`: `--color-success-600` no existía en tokens → cambiado a `--color-success-700`.
+
+**B5 — Sugerencia rechazada no recuperable:**
+- `src/app/dashboard/conversations/[id]/page.tsx`: `dismissedSuggestion` state preserva la sugerencia rechazada; chip de recuperación permite restaurarla.
+
+**B6 — ⋮ sin menú en chat:**
+- `src/app/dashboard/conversations/[id]/page.tsx`: dropdown con "Marcar como resuelta" y "Archivar conversación". Backdrop cierra el menú. Navega a bandeja tras la acción.
+
+**B7 — Borde verde en inputs:**
+- `src/app/globals.css`: `*:focus-visible` excluye inputs/textarea/select. Sin override `focus:outline-none` de Tailwind que no cubre `:focus-visible` en mobile.
+
+**B8 — Badges hardcodeados en nav:**
+- `src/components/dashboard/AppNavigation.tsx`: hook `useNavCounts()` carga datos reales al montar. Badge Conversaciones = `pending_approval`. Badge Entrenar = `knowledge_count = 0`.
+
+**B9 — /dashboard/train es 404:**
+- `src/app/dashboard/train/page.tsx` (nuevo): hub de entrenamiento con 4 secciones: burbujas de instrucciones recientes, QuickInstruct, temas sin cubrir (oportunidades), mini-historial con HistoryCards.
+
+**Documentación actualizada:**
+- `docs/screen-inventory-implemented.md`: Pantalla 7 descrita completamente, badges actualizados, nav tree corregido, tabla de bugs limpiada.
+
+## Decisiones tomadas (2026-03-21)
+
+- **Pantalla Entrenar como hub unificado:** Consolida QuickInstruct, historial y oportunidades en una sola pantalla. El historial completo sigue en `/agent/history` pero se accede desde aquí con "Ver todo".
+- **Contexto de tema vía chip visible:** Al tocar "Entrenar" en una oportunidad, se muestra un chip encima del input (no se pre-llena el input). Más claro visualmente que texto pre-cargado.
+- **Partial unique index `WHERE status != 'archived'`:** Permite múltiples conversaciones archivadas del mismo teléfono (histórico) pero solo una activa.
+
+## Qué se construyó (sesión 2026-03-21 — Performance + Caché)
+
+### Corrección de lag de navegación
+
+**Root causes identificados y resueltos:**
+- `useNavCounts()` local en AppNavigation → llamado en AppSidebar Y MobileNav → 4 queries por mount
+- `conversations/page.tsx`: `select('*')` sin filtro `business_id` → payload innecesariamente grande
+- Sin `loading.tsx` → server components congelaban la UI hasta respuesta completa del servidor
+
+**Archivos creados:**
+- `src/components/dashboard/NavCountsContext.tsx`: Provider único con `useQuery` — ambos nav consumen del contexto
+- `src/providers/QueryProvider.tsx`: `QueryClient` con defaults globales (staleTime 30s, gcTime 5min, no refetch on focus)
+- `src/app/dashboard/loading.tsx`: Skeleton para el home (server component)
+
+**Archivos modificados:**
+- `src/app/layout.tsx`: Envuelto en `QueryProvider`
+- `src/app/dashboard/layout.tsx`: Envuelto en `NavCountsProvider`
+- `src/components/dashboard/AppNavigation.tsx`: Eliminado hook local, importa de contexto
+- `src/app/dashboard/conversations/page.tsx`: Migrado a `useQuery(["conversations"])` + realtime via `invalidateQueries`
+- `src/app/dashboard/train/page.tsx`: Migrado a `useQuery(["train-data"])` + invalidación en mutations
+
+### TanStack Query integrado (v5.94.5)
+
+**Query keys y staleTime:**
+- `["nav-counts"]` — 20s: badges de navegación
+- `["conversations"]` — 10s: bandeja, invalidado por Realtime y nav-counts
+- `["train-data"]` — 20s: historial + oportunidades, invalidado tras confirmar instrucción o toggle
+
+## Decisiones tomadas (2026-03-21 — Performance)
+
+- **TanStack Query sobre SWR**: TanStack tiene `invalidateQueries` por key, esencial para invalidar exactamente lo que cambió tras una mutation. SWR requiere workarounds para esto.
+- **`refetchOnWindowFocus: false`**: App mobile-first — los focus events en PWA son frecuentes y no señalan que los datos cambiaron.
+- **Realtime + invalidation pattern**: Los handlers de Realtime NO re-fetchean manualmente — solo llaman `invalidateQueries`. TanStack deduplica y decide cuándo refetchear.
+- **`staleTime` corto en conversaciones (10s)**: La bandeja es el dato más sensible a cambios. 10s asegura frescura sin sobrecarga.
+
 ## Blockers
 - Ninguno técnico.
 
 ## Próximo paso
-**Fase 6 — Bloque 6.1: Migración a Meta producción.**
+**FASE INTERMEDIA — Rediseño UI**
+- El usuario tiene archivos HTML/CSS con el nuevo diseño
+- Entregar archivos en `docs/redesign/` y abrir nueva sesión enfocada en frontend
+- Después del rediseño → **Fase 6 — Bloque 6.1: Migración a Meta producción.**
 - Salir de sandbox de Meta (App modo live)
 - Configurar dominio de producción en webhook de Meta
 - Crear y aprobar Message Templates de WhatsApp
