@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, MoreVertical, ArrowUp } from "lucide-react";
+import { ArrowLeft, MoreVertical, ArrowUp, Sparkles, Archive, CheckCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { MessageBubble, MessageSenderType } from "@/components/dashboard/MessageBubble";
 import { AgentSuggestionWidget } from "@/components/dashboard/AgentSuggestionWidget";
@@ -35,11 +35,19 @@ export default function ConversationThreadPage() {
   const [messages, setMessages] = React.useState<MockMsg[]>([]);
   const [suggestionState, setSuggestionState] = React.useState<"active" | "escalated" | "handled">("handled");
   const [activeSuggestion, setActiveSuggestion] = React.useState<any>(null);
+  const [dismissedSuggestion, setDismissedSuggestion] = React.useState<any>(null);
   const [activeEscalation, setActiveEscalation] = React.useState<any>(null);
   const [clientData, setClientData] = React.useState({ name: "Cargando...", phone: "" });
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [manualReply, setManualReply] = React.useState("");
+  const [showMenu, setShowMenu] = React.useState(false);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const supabase = createClient();
+
+  // Auto-scroll al último mensaje
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   React.useEffect(() => {
     let channel: any;
@@ -174,6 +182,7 @@ export default function ConversationThreadPage() {
       
       } else if (action === "reject") {
         if (!activeSuggestion) return;
+        setDismissedSuggestion(activeSuggestion);
         setSuggestionState("handled");
         const { data: { session } } = await supabase.auth.getSession();
         const { error } = await supabase.functions.invoke('suggestion-actions', {
@@ -232,6 +241,25 @@ export default function ConversationThreadPage() {
     }
   };
 
+  const handleConversationAction = async (action: "resolve" | "archive") => {
+    setShowMenu(false);
+    setIsProcessing(true);
+    try {
+      const newStatus = action === "resolve" ? "resolved" : "archived";
+      const { error } = await supabase
+        .from("conversations")
+        .update({ status: newStatus, ...(action === "resolve" ? { resolved_by: "owner_manual" } : {}) })
+        .eq("id", id);
+      if (error) throw error;
+      toast({ type: "success", message: action === "resolve" ? "Conversación marcada como resuelta." : "Conversación archivada." });
+      router.push("/dashboard/conversations");
+    } catch (err: any) {
+      toast({ type: "error", message: `Error: ${err.message || "Desconocido"}` });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="flex w-full h-full flex-col bg-(--surface-background) relative overflow-hidden">
       {/* Header */}
@@ -247,9 +275,35 @@ export default function ConversationThreadPage() {
           <span className="font-semibold text-(--text-primary)">{clientData.name}</span>
           <span className="text-xs text-(--text-tertiary)">{clientData.phone || "Sin teléfono visible"}</span>
         </div>
-        <button className="rounded-full p-2 text-(--text-secondary) hover:bg-(--surface-muted) transition-colors">
-          <MoreVertical className="h-5 w-5" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(prev => !prev)}
+            className="rounded-full p-2 text-(--text-secondary) hover:bg-(--surface-muted) transition-colors"
+          >
+            <MoreVertical className="h-5 w-5" />
+          </button>
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setShowMenu(false)} />
+              <div className="absolute right-0 top-full mt-1 z-30 bg-white rounded-xl border border-(--surface-border) shadow-lg py-1 min-w-[200px]">
+                <button
+                  onClick={() => handleConversationAction("resolve")}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-(--text-primary) hover:bg-(--surface-muted) transition-colors"
+                >
+                  <CheckCircle className="h-4 w-4 text-(--color-success-700) shrink-0" />
+                  Marcar como resuelta
+                </button>
+                <button
+                  onClick={() => handleConversationAction("archive")}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-(--text-primary) hover:bg-(--surface-muted) transition-colors"
+                >
+                  <Archive className="h-4 w-4 text-(--text-secondary) shrink-0" />
+                  Archivar conversación
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Chat History */}
@@ -264,6 +318,7 @@ export default function ConversationThreadPage() {
             clientName={clientData.name}
           />
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Bottom Fixed Action Area */}
@@ -290,6 +345,16 @@ export default function ConversationThreadPage() {
                 isProcessing={isProcessing}
               />
             </div>
+          )}
+
+          {suggestionState === "handled" && dismissedSuggestion && (
+            <button
+              onClick={() => { setActiveSuggestion(dismissedSuggestion); setDismissedSuggestion(null); setSuggestionState("active"); }}
+              className="w-full flex items-center gap-2 px-4 py-2 mb-2 bg-(--color-primary-50) border border-(--color-primary-100) rounded-xl text-sm text-(--color-primary-700) hover:bg-(--color-primary-100) transition-colors"
+            >
+              <Sparkles className="h-4 w-4 shrink-0" />
+              <span className="flex-1 text-left truncate">Borrador descartado — toca para verlo de nuevo</span>
+            </button>
           )}
 
           {suggestionState === "handled" && (
