@@ -3,9 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/ui/Toast";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
+import { useBusinessId } from "@/hooks/useBusinessId";
+
+const PLAN_LIMIT = 500;
 
 const SECTIONS = [
   { label: "General", items: [
@@ -40,34 +45,45 @@ function SettingItem({ href, icon, label, desc, last }: { href: string; icon: st
   );
 }
 
+async function fetchSettingsData(bizId: string) {
+  const supabase = createClient();
+  const [{ data: { user } }, { data: biz }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from("businesses").select("name").eq("id", bizId).single(),
+  ]);
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { count } = await supabase.from("conversations")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", bizId).gte("created_at", monthStart);
+  return {
+    name: biz?.name || "Mi Negocio",
+    email: user?.email || "",
+    convCount: count ?? 0,
+  };
+}
+
 export default function SettingsPage() {
   const supabase = createClient();
   const router = useRouter();
-  const [biz, setBiz] = React.useState<{ name: string; email: string } | null>(null);
-  const [convCount, setConvCount] = React.useState<number | null>(null);
-  const PLAN_LIMIT = 500;
+  const { data: businessId } = useBusinessId();
 
-  React.useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from("businesses").select("id, name").eq("owner_id", user.id).single();
-      if (!data) return;
-      setBiz({ name: data.name || "Mi Negocio", email: user.email || "" });
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { count } = await supabase.from("conversations").select("id", { count: "exact", head: true })
-        .eq("business_id", data.id).gte("created_at", monthStart);
-      setConvCount(count ?? 0);
-    })();
-  }, []);
+  const { data } = useQuery({
+    queryKey: ["settings-overview", businessId],
+    queryFn: () => fetchSettingsData(businessId!),
+    enabled: !!businessId,
+    staleTime: 5 * 60_000,
+  });
+
+  const name = data?.name ?? "Mi Negocio";
+  const email = data?.email ?? "";
+  const convCount = data?.convCount ?? null;
+  const pct = convCount !== null ? Math.min(Math.round((convCount / PLAN_LIMIT) * 100), 100) : 0;
 
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push("/login");
   }
-
-  const pct = convCount !== null ? Math.min(Math.round((convCount / PLAN_LIMIT) * 100), 100) : 0;
 
   return (
     <div className="flex flex-col h-full w-full bg-[#F8F9FA] overflow-y-auto">
@@ -78,12 +94,12 @@ export default function SettingsPage() {
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-white/20 p-1 backdrop-blur-sm shrink-0">
               <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-[#3DC185] text-xl font-semibold tracking-tight">
-                {initials(biz?.name || "MB")}
+                {initials(name)}
               </div>
             </div>
             <div className="text-white">
-              <h2 className="text-2xl font-medium tracking-tight">{biz?.name || "Mi Negocio"}</h2>
-              <p className="text-sm text-white/80 mt-0.5">{biz?.email || ""}</p>
+              <h2 className="text-2xl font-medium tracking-tight">{name}</h2>
+              <p className="text-sm text-white/80 mt-0.5">{email}</p>
             </div>
           </div>
           <Link href="/dashboard/settings/profile" className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2 rounded-xl transition-colors mt-1">
