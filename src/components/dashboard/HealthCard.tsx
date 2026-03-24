@@ -11,7 +11,7 @@ interface HealthCardProps {
 
 export function HealthCard({ healthScore, healthLevel, coveredCore, totalCore }: HealthCardProps) {
   return (
-    <section className="bg-emerald-900 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
+    <section className="bg-emerald-950 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
       <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl -ml-8 -mb-8 pointer-events-none" />
 

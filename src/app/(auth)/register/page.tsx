@@ -50,9 +50,12 @@ export default function RegisterPage() {
 
   return (
     <>
-      <div className="mt-4 mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Registro</h1>
-        <p className="text-sm text-slate-800 leading-relaxed">Crea tu cuenta y configura tu agente.</p>
+      <div className="absolute top-8 right-6 sm:right-10 w-10 h-10 rounded-xl bg-[#3DC185] flex items-center justify-center text-white shadow-sm">
+        <Icon name="solar:sparkles-bold-duotone" size={20} />
+      </div>
+      <div className="mt-8 mb-8">
+        <h1 className="text-4xl font-semibold text-[#3DC185] tracking-tight mb-3">Crear cuenta,</h1>
+        <p className="text-sm text-slate-800 leading-relaxed pr-12">Configura tu agente IA en minutos.</p>
       </div>
 
       {error && (
@@ -64,15 +67,15 @@ export default function RegisterPage() {
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-slate-500">Nombre completo</label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre completo</label>
           <input type="text" placeholder="Tu nombre" value={fullName} onChange={e => setFullName(e.target.value)} required className={INPUT_CLS} />
         </div>
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-slate-500">Correo electrónico</label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Correo electrónico</label>
           <input type="email" placeholder="tu@correo.com" value={email} onChange={e => setEmail(e.target.value)} required className={INPUT_CLS} />
         </div>
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-slate-500">Contraseña</label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Contraseña</label>
           <div className="relative">
             <input type={showPw ? "text" : "password"} placeholder="Mínimo 8 caracteres" value={password} onChange={e => setPassword(e.target.value)} required minLength={8}
               className="w-full pl-5 pr-14 h-12 bg-[#FCFDFD] border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#3DC185] focus:border-[#3DC185] transition-all placeholder:text-slate-400 text-slate-800" />
@@ -82,7 +85,7 @@ export default function RegisterPage() {
           </div>
         </div>
         <div className="space-y-1.5 pb-2">
-          <label className="block text-xs font-medium text-slate-500">WhatsApp personal <span className="text-slate-400 font-normal">(Opcional)</span></label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">WhatsApp personal <span className="text-slate-400 font-normal normal-case">(Opcional)</span></label>
           <input type="tel" placeholder="+502 1234 5678" value={phonePersonal} onChange={e => setPhonePersonal(e.target.value)} className={INPUT_CLS} />
           <p className="text-[11px] text-slate-400 pl-1">Para recibir notificaciones urgentes y resúmenes diarios</p>
         </div>

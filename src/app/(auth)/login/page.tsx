@@ -38,8 +38,8 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="absolute top-8 right-6 sm:right-10 w-12 h-12 rounded-full bg-[#3DC185] flex items-center justify-center text-white shadow-sm">
-        <Icon name="solar:magic-stick-3-linear" size={22} />
+      <div className="absolute top-8 right-6 sm:right-10 w-10 h-10 rounded-xl bg-[#3DC185] flex items-center justify-center text-white shadow-sm">
+        <Icon name="solar:sparkles-bold-duotone" size={20} />
       </div>
 
       <div className="mt-8 mb-8">
@@ -56,12 +56,12 @@ export default function LoginPage() {
 
       <form onSubmit={handleEmailLogin} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-slate-500">Email</label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</label>
           <input type="email" placeholder="stanley.cohen@gmail.com" value={email} onChange={e => setEmail(e.target.value)} required
             className="w-full px-5 h-12 bg-[#FCFDFD] border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#3DC185] focus:border-[#3DC185] transition-all placeholder:text-slate-400 text-slate-800" />
         </div>
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-slate-500">Password</label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Contraseña</label>
           <div className="relative">
             <input type={showPw ? "text" : "password"} placeholder="••••••" value={password} onChange={e => setPassword(e.target.value)} required
               className="w-full pl-5 pr-14 h-12 bg-[#FCFDFD] border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#3DC185] focus:border-[#3DC185] transition-all placeholder:text-slate-400 text-slate-800" />

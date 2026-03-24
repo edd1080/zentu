@@ -50,10 +50,10 @@ export default function TrainPage() {
         <section ref={instructRef} className="flex flex-col gap-3">
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nueva instrucción</h2>
           {prefillTopic && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl text-sm text-emerald-700">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#3DC185]/10 border border-[#3DC185]/20 rounded-xl text-sm text-[#3DC185]">
               <Icon name="solar:lightbulb-linear" size={14} className="shrink-0" />
               <span className="flex-1">Entrenando sobre: <strong>{prefillTopic}</strong></span>
-              <button onClick={() => setPrefillTopic(null)} className="p-0.5 rounded hover:bg-emerald-100 transition-colors">
+              <button onClick={() => setPrefillTopic(null)} className="p-0.5 rounded hover:bg-[#3DC185]/20 transition-colors">
                 <Icon name="solar:close-circle-linear" size={14} />
               </button>
             </div>

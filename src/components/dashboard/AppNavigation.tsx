@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/Icon";
 import { useNavCounts } from "./NavCountsContext";
 import { LogoutButton } from "./LogoutButton";
+import { SidebarBusinessWidget } from "./SidebarBusinessWidget";
 
 const navItems = [
   { name: "Inicio",       href: "/dashboard",                    icon: "solar:home-smile-linear",       countKey: null },
@@ -26,13 +27,14 @@ export function AppSidebar() {
 
   return (
     <aside className="hidden md:flex w-[240px] flex-col bg-[#F8F9FA] border-r border-slate-200/60 shrink-0 h-full">
-      {/* Logo */}
-      <div className="flex h-14 items-center px-6">
+      {/* Logo + Beta pill */}
+      <div className="flex h-14 items-center gap-2 px-6">
         <span className="text-lg font-semibold tracking-tight text-slate-900">Agenti</span>
+        <span className="px-1.5 py-0.5 rounded-md bg-white border border-slate-200/60 text-xs text-slate-500 shadow-sm leading-none">Beta</span>
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const active = isActive(item.href, pathname);
           const badge = item.countKey ? counts[item.countKey] : 0;
@@ -62,6 +64,9 @@ export function AppSidebar() {
           );
         })}
       </nav>
+
+      {/* Business widget */}
+      <SidebarBusinessWidget />
 
       {/* Bottom: Settings + Logout */}
       <div className="px-3 pb-4 pt-2 space-y-0.5 border-t border-slate-200/60">

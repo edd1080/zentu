@@ -27,10 +27,10 @@ const badgeMap: Record<string, { label: string; cls: string }> = {
 };
 
 const avatarMap: Record<string, string> = {
-  urgent: "bg-slate-100 border-slate-200 text-slate-600",
-  escalated_sensitive: "bg-slate-100 border-slate-200 text-slate-600",
-  escalated_info: "bg-slate-100 border-slate-200 text-slate-600",
-  pending_approval: "bg-emerald-50 border-emerald-100 text-emerald-700",
+  urgent: "bg-rose-50 border-rose-100 text-rose-600",
+  escalated_sensitive: "bg-amber-50 border-amber-100 text-amber-600",
+  escalated_info: "bg-blue-50 border-blue-100 text-blue-600",
+  pending_approval: "bg-[#3DC185]/10 border-[#3DC185]/20 text-[#3DC185]",
   none: "bg-slate-100 border-slate-200 text-slate-600",
 };
 
