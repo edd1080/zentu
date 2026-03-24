@@ -91,15 +91,24 @@ serve(async (req) => {
             const invokeProcessMessage = async () => {
                 try {
                     const { error } = await supabase.functions.invoke('process-message', {
-                        body: { queueId, payload }
+                        body: { queueId, payload },
+                        headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
                     })
                     if (error) {
                         console.error(`Error invoking process-message for queueId ${queueId}`, error)
+                        await supabase.from('webhook_queue').update({
+                            status: 'error',
+                            error_message: `Invocation failed: ${String(error)}`
+                        }).eq('id', queueId)
                     } else {
                         console.log(`process-message successfully invoked for queueId ${queueId}`)
                     }
                 } catch (err) {
                     console.error(`Exception invoking process-message for queueId ${queueId}`, err)
+                    await supabase.from('webhook_queue').update({
+                        status: 'error',
+                        error_message: `Invocation exception: ${String(err)}`
+                    }).eq('id', queueId)
                 }
             }
 
