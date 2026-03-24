@@ -3,6 +3,8 @@ import { AppSidebar, MobileNav } from "@/components/dashboard/AppNavigation";
 import { NavCountsProvider } from "@/components/dashboard/NavCountsContext";
 import OneSignalInitializer from "@/components/notifications/OneSignalInitializer";
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardLayout({
   children,
 }: {
