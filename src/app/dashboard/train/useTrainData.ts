@@ -41,7 +41,7 @@ export function useTrainData() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({ queryKey: ["train-data"], queryFn: fetchTrainData, staleTime: 20_000 });
+  const { data, isLoading } = useQuery({ queryKey: ["train-data"], queryFn: fetchTrainData, staleTime: 60_000});
 
   const [toggling, setToggling] = React.useState<string | null>(null);
   const [confirmItem, setConfirmItem] = React.useState<HistoryItem | null>(null);

@@ -12,8 +12,8 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           queries: {
             // Show cached data immediately, refetch in background after 30s
             staleTime: 30_000,
-            // Keep unused data in memory for 5 minutes
-            gcTime: 5 * 60_000,
+            // Keep unused data in memory for 10 minutes
+            gcTime: 10 * 60_000,
             // Don't refetch on window focus in a mobile-first app
             refetchOnWindowFocus: false,
             // Retry once on failure

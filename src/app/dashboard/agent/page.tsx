@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QuickInstruct } from "@/components/dashboard/QuickInstruct";
 import { CompetencyMap } from "@/components/dashboard/CompetencyMap";
 import { HealthCard } from "@/components/dashboard/HealthCard";
@@ -9,60 +10,63 @@ import { Icon } from "@/components/ui/Icon";
 import { createClient } from "@/lib/supabase/client";
 import type { Topic } from "@/components/dashboard/TopicCard";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { useBusinessId } from "@/hooks/useBusinessId";
+
+async function fetchTopics(bizId: string): Promise<Topic[]> {
+  const supabase = createClient();
+  const { data } = await supabase.from("competency_topics")
+    .select("id, name, status, coverage_percentage, description, is_default")
+    .eq("business_id", bizId)
+    .order("is_default", { ascending: false })
+    .order("name", { ascending: true });
+  if (!data) return [];
+  const { data: knowledgeRows } = await supabase.from("knowledge_items")
+    .select("topic_id")
+    .in("topic_id", data.map((t) => t.id))
+    .eq("active", true);
+  const countMap = (knowledgeRows || []).reduce((acc: Record<string, number>, row: any) => {
+    acc[row.topic_id] = (acc[row.topic_id] || 0) + 1;
+    return acc;
+  }, {});
+  return data.map((t: any) => ({ ...t, knowledge_count: countMap[t.id] || 0 }));
+}
 
 export default function AgentPage() {
-  const [topics, setTopics] = React.useState<Topic[]>([]);
-  const [businessId, setBusinessId] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(true);
   const supabase = createClient();
+  const queryClient = useQueryClient();
+  const { data: businessId } = useBusinessId();
+  const [expandedItems, setExpandedItems] = React.useState<Record<string, any[]>>({});
 
-  const loadTopics = React.useCallback(async (bizId: string) => {
-    const { data } = await supabase.from("competency_topics")
-      .select("id, name, status, coverage_percentage, description, is_default")
-      .eq("business_id", bizId).order("is_default", { ascending: false }).order("name", { ascending: true });
-    if (!data) return;
-    // Single batch query instead of N+1 per topic
-    const { data: knowledgeRows } = await supabase.from("knowledge_items")
-      .select("topic_id")
-      .in("topic_id", data.map((t: any) => t.id))
-      .eq("active", true);
-    const countMap = (knowledgeRows || []).reduce((acc: Record<string, number>, row: any) => {
-      acc[row.topic_id] = (acc[row.topic_id] || 0) + 1;
-      return acc;
-    }, {});
-    const withCounts: Topic[] = data.map((t: any) => ({ ...t, knowledge_count: countMap[t.id] || 0 }));
-    setTopics(prev => withCounts.map(t => ({ ...t, items: prev.find(p => p.id === t.id)?.items })));
-  }, [supabase]);
+  const { data: topics = [], isLoading } = useQuery({
+    queryKey: ["topics", businessId],
+    queryFn: () => fetchTopics(businessId!),
+    enabled: !!businessId,
+    staleTime: 2 * 60_000,
+  });
 
-  React.useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", user.id).single();
-      if (!biz) return;
-      setBusinessId(biz.id);
-      await loadTopics(biz.id);
-      setLoading(false);
-    })();
-  }, []);
-
+  // Realtime: invalidate topics query on competency_topic changes
   React.useEffect(() => {
     if (!businessId) return;
-    const ch = supabase.channel("competency-realtime").on("postgres_changes",
-      { event: "UPDATE", schema: "public", table: "competency_topics", filter: `business_id=eq.${businessId}` },
-      async (payload: any) => {
-        const { count } = await supabase.from("knowledge_items").select("id", { count: "exact", head: true }).eq("topic_id", payload.new.id).eq("active", true);
-        setTopics(prev => prev.map(t => t.id === payload.new.id ? { ...t, coverage_percentage: payload.new.coverage_percentage, status: payload.new.status, knowledge_count: count ?? t.knowledge_count } : t));
-      }
-    ).subscribe();
+    const ch = supabase.channel("competency-realtime")
+      .on("postgres_changes", {
+        event: "UPDATE", schema: "public", table: "competency_topics",
+        filter: `business_id=eq.${businessId}`,
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ["topics", businessId] });
+      })
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [businessId]);
 
   const handleTopicClick = async (topicId: string) => {
-    const { data } = await supabase.from("knowledge_items").select("id, content, layer, created_at").eq("topic_id", topicId).eq("active", true).order("created_at", { ascending: false });
-    setTopics(prev => prev.map(t => t.id === topicId ? { ...t, items: data || [] } : t));
+    const { data } = await supabase.from("knowledge_items")
+      .select("id, content, layer, created_at")
+      .eq("topic_id", topicId).eq("active", true)
+      .order("created_at", { ascending: false });
+    setExpandedItems(prev => ({ ...prev, [topicId]: data || [] }));
   };
 
+  const topicsWithItems = topics.map(t => ({ ...t, items: expandedItems[t.id] }));
   const coreTopics = topics.filter(t => t.is_default);
   const coveredCore = coreTopics.filter(t => t.knowledge_count > 0).length;
   const healthScore = coreTopics.length > 0 ? Math.round((coveredCore / coreTopics.length) * 100) : 0;
@@ -85,7 +89,10 @@ export default function AgentPage() {
             <Icon name="solar:pen-new-round-linear" size={16} className="text-[#3DC185]" />
             <h2 className="text-sm font-semibold text-slate-900">Enseñar algo nuevo</h2>
           </div>
-          <QuickInstruct businessId={businessId || undefined} onSuccess={() => businessId && loadTopics(businessId)} />
+          <QuickInstruct businessId={businessId || undefined} onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["topics", businessId] });
+            queryClient.invalidateQueries({ queryKey: ["train-data"] });
+          }} />
         </section>
 
         <section className="flex flex-col gap-3">
@@ -93,12 +100,12 @@ export default function AgentPage() {
             <Icon name="solar:map-linear" size={16} className="text-[#3DC185]" />
             <h2 className="text-sm font-semibold text-slate-900">Mapa de conocimiento</h2>
           </div>
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Icon name="solar:refresh-linear" size={24} className="text-slate-300 animate-spin" />
             </div>
           ) : (
-            <CompetencyMap topics={topics} onTopicClick={handleTopicClick} />
+            <CompetencyMap topics={topicsWithItems} onTopicClick={handleTopicClick} />
           )}
         </section>
 

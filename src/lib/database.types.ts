@@ -12,33 +12,37 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
+      agent_context_cache: {
+        Row: {
+          business_id: string
+          context_string: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          business_id: string
+          context_string: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string
+          context_string?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_context_cache_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           activation_date: string | null
@@ -146,8 +150,12 @@ export type Database = {
           id: string
           industry: Database["public"]["Enums"]["industry_type"]
           name: string
+          notification_hour: number
+          notify_training_alerts: boolean
           owner_id: string
           phone_business: string | null
+          quiet_hours_end: number
+          quiet_hours_start: number
           schedule: Json | null
           timezone: string
           whatsapp_access_token: string | null
@@ -164,8 +172,12 @@ export type Database = {
           id?: string
           industry: Database["public"]["Enums"]["industry_type"]
           name: string
+          notification_hour?: number
+          notify_training_alerts?: boolean
           owner_id: string
           phone_business?: string | null
+          quiet_hours_end?: number
+          quiet_hours_start?: number
           schedule?: Json | null
           timezone?: string
           whatsapp_access_token?: string | null
@@ -182,8 +194,12 @@ export type Database = {
           id?: string
           industry?: Database["public"]["Enums"]["industry_type"]
           name?: string
+          notification_hour?: number
+          notify_training_alerts?: boolean
           owner_id?: string
           phone_business?: string | null
+          quiet_hours_end?: number
+          quiet_hours_start?: number
           schedule?: Json | null
           timezone?: string
           whatsapp_access_token?: string | null
@@ -207,9 +223,12 @@ export type Database = {
           approval_rate_7d: number
           business_id: string
           coverage_percentage: number
+          description: string | null
           escalation_rate_7d: number
           id: string
           incident_count_7d: number
+          is_default: boolean | null
+          knowledge_count: number
           last_updated: string
           name: string
           status: Database["public"]["Enums"]["competency_status"]
@@ -218,9 +237,12 @@ export type Database = {
           approval_rate_7d?: number
           business_id: string
           coverage_percentage?: number
+          description?: string | null
           escalation_rate_7d?: number
           id?: string
           incident_count_7d?: number
+          is_default?: boolean | null
+          knowledge_count?: number
           last_updated?: string
           name: string
           status?: Database["public"]["Enums"]["competency_status"]
@@ -229,9 +251,12 @@ export type Database = {
           approval_rate_7d?: number
           business_id?: string
           coverage_percentage?: number
+          description?: string | null
           escalation_rate_7d?: number
           id?: string
           incident_count_7d?: number
+          is_default?: boolean | null
+          knowledge_count?: number
           last_updated?: string
           name?: string
           status?: Database["public"]["Enums"]["competency_status"]
@@ -412,6 +437,7 @@ export type Database = {
           created_at: string
           id: string
           level: Database["public"]["Enums"]["escalation_level"]
+          metadata: Json | null
           notified_push_at: string | null
           notified_whatsapp_at: string | null
           reason: string
@@ -428,6 +454,7 @@ export type Database = {
           created_at?: string
           id?: string
           level: Database["public"]["Enums"]["escalation_level"]
+          metadata?: Json | null
           notified_push_at?: string | null
           notified_whatsapp_at?: string | null
           reason: string
@@ -444,6 +471,7 @@ export type Database = {
           created_at?: string
           id?: string
           level?: Database["public"]["Enums"]["escalation_level"]
+          metadata?: Json | null
           notified_push_at?: string | null
           notified_whatsapp_at?: string | null
           reason?: string
@@ -786,6 +814,7 @@ export type Database = {
           full_name: string
           id: string
           last_active_at: string
+          onesignal_id: string | null
           phone_personal: string | null
           phone_verified: boolean
         }
@@ -795,6 +824,7 @@ export type Database = {
           full_name: string
           id: string
           last_active_at?: string
+          onesignal_id?: string | null
           phone_personal?: string | null
           phone_verified?: boolean
         }
@@ -804,6 +834,7 @@ export type Database = {
           full_name?: string
           id?: string
           last_active_at?: string
+          onesignal_id?: string | null
           phone_personal?: string | null
           phone_verified?: boolean
         }
@@ -826,6 +857,7 @@ export type Database = {
           final_content: string | null
           id: string
           knowledge_items_used: string[] | null
+          metadata: Json | null
           resolved_at: string | null
           resolved_by_owner: boolean | null
           status: Database["public"]["Enums"]["suggestion_status"]
@@ -846,6 +878,7 @@ export type Database = {
           final_content?: string | null
           id?: string
           knowledge_items_used?: string[] | null
+          metadata?: Json | null
           resolved_at?: string | null
           resolved_by_owner?: boolean | null
           status?: Database["public"]["Enums"]["suggestion_status"]
@@ -866,6 +899,7 @@ export type Database = {
           final_content?: string | null
           id?: string
           knowledge_items_used?: string[] | null
+          metadata?: Json | null
           resolved_at?: string | null
           resolved_by_owner?: boolean | null
           status?: Database["public"]["Enums"]["suggestion_status"]
@@ -887,6 +921,138 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          actor: Database["public"]["Enums"]["log_actor"]
+          business_id: string | null
+          conversation_id: string | null
+          created_at: string
+          error_message: string | null
+          error_type: string | null
+          escalation_id: string | null
+          event_type: string
+          id: string
+          llm_latency_ms: number | null
+          llm_model: string | null
+          llm_provider: string | null
+          llm_tokens_input: number | null
+          llm_tokens_output: number | null
+          message_id: string | null
+          metadata: Json | null
+          outcome: Database["public"]["Enums"]["log_outcome"]
+          suggestion_id: string | null
+          trace_id: string
+        }
+        Insert: {
+          actor?: Database["public"]["Enums"]["log_actor"]
+          business_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          error_type?: string | null
+          escalation_id?: string | null
+          event_type: string
+          id?: string
+          llm_latency_ms?: number | null
+          llm_model?: string | null
+          llm_provider?: string | null
+          llm_tokens_input?: number | null
+          llm_tokens_output?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          outcome?: Database["public"]["Enums"]["log_outcome"]
+          suggestion_id?: string | null
+          trace_id: string
+        }
+        Update: {
+          actor?: Database["public"]["Enums"]["log_actor"]
+          business_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          error_type?: string | null
+          escalation_id?: string | null
+          event_type?: string
+          id?: string
+          llm_latency_ms?: number | null
+          llm_model?: string | null
+          llm_provider?: string | null
+          llm_tokens_input?: number | null
+          llm_tokens_output?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          outcome?: Database["public"]["Enums"]["log_outcome"]
+          suggestion_id?: string | null
+          trace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_escalation_id_fkey"
+            columns: ["escalation_id"]
+            isOneToOne: false
+            referencedRelation: "escalations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_logs_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          id: string
+          payload: Json
+          status: Database["public"]["Enums"]["webhook_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payload: Json
+          status?: Database["public"]["Enums"]["webhook_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payload?: Json
+          status?: Database["public"]["Enums"]["webhook_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -903,6 +1069,16 @@ export type Database = {
         Returns: Json
       }
       get_business_id: { Args: never; Returns: string }
+      process_escalation_fallbacks: { Args: never; Returns: undefined }
+      refresh_competency_coverage: {
+        Args: { p_business_id: string }
+        Returns: undefined
+      }
+      seed_industry_data: {
+        Args: { p_business_id: string; p_industry: string }
+        Returns: Json
+      }
+      trigger_daily_summaries: { Args: never; Returns: undefined }
       verify_owner_phone: { Args: never; Returns: undefined }
     }
     Enums: {
@@ -947,6 +1123,8 @@ export type Database = {
         | "link_extraction"
         | "correction"
       knowledge_validity: "permanent" | "temporary" | "one_time"
+      log_actor: "owner" | "system" | "client" | "meta_webhook"
+      log_outcome: "success" | "error" | "timeout" | "fallback"
       media_type: "text" | "image" | "audio" | "document"
       message_delivery_status: "sent" | "delivered" | "read" | "failed"
       message_direction: "inbound" | "outbound"
@@ -979,6 +1157,7 @@ export type Database = {
         | "expired"
         | "auto_sent"
       summary_type: "daily" | "weekly" | "first_week"
+      webhook_status: "pending" | "processing" | "completed" | "error"
       whatsapp_status:
         | "disconnected"
         | "connecting"
@@ -1110,9 +1289,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       agent_mode: ["collaborator", "autonomous_partial", "autonomous_full"],
@@ -1160,6 +1336,8 @@ export const Constants = {
         "correction",
       ],
       knowledge_validity: ["permanent", "temporary", "one_time"],
+      log_actor: ["owner", "system", "client", "meta_webhook"],
+      log_outcome: ["success", "error", "timeout", "fallback"],
       media_type: ["text", "image", "audio", "document"],
       message_delivery_status: ["sent", "delivered", "read", "failed"],
       message_direction: ["inbound", "outbound"],
@@ -1190,6 +1368,7 @@ export const Constants = {
         "auto_sent",
       ],
       summary_type: ["daily", "weekly", "first_week"],
+      webhook_status: ["pending", "processing", "completed", "error"],
       whatsapp_status: [
         "disconnected",
         "connecting",

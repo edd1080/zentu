@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
 import { Icon } from "@/components/ui/Icon";
+import { useBusinessId } from "@/hooks/useBusinessId";
 
 interface NotifPrefs { id: string; notification_hour: number; quiet_hours_start: number; quiet_hours_end: number; notify_training_alerts: boolean; }
 
@@ -13,27 +15,33 @@ function fromTime(t: string) { return parseInt(t.split(":")[0], 10); }
 
 const TIME_INPUT = "bg-white border border-slate-200 rounded-xl px-4 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#3DC185]/20 focus:border-[#3DC185] transition-all";
 
+async function fetchNotifPrefs(bizId: string): Promise<NotifPrefs | null> {
+  const supabase = createClient();
+  const { data } = await supabase.from("businesses")
+    .select("id, notification_hour, quiet_hours_start, quiet_hours_end, notify_training_alerts")
+    .eq("id", bizId).single();
+  return data as unknown as NotifPrefs ?? null;
+}
+
 export default function NotificationsPage() {
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [prefs, setPrefs] = React.useState<NotifPrefs | null>(null);
+  const { data: businessId } = useBusinessId();
   const [saving, setSaving] = React.useState(false);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  React.useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from("businesses")
-        .select("id, notification_hour, quiet_hours_start, quiet_hours_end, notify_training_alerts")
-        .eq("owner_id", user.id).single();
-      if (data) setPrefs(data as unknown as NotifPrefs);
-    }
-    load();
-  }, []);
+  const { data: prefs } = useQuery({
+    queryKey: ["notifications", businessId],
+    queryFn: () => fetchNotifPrefs(businessId!),
+    enabled: !!businessId,
+    staleTime: 5 * 60_000,
+  });
 
   function update(patch: Partial<NotifPrefs>) {
-    setPrefs(prev => prev ? { ...prev, ...patch } : prev);
+    queryClient.setQueryData(["notifications", businessId], (old: NotifPrefs | null) =>
+      old ? { ...old, ...patch } : old
+    );
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       setSaving(true);

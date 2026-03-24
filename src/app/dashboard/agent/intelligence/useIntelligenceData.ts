@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { useBusinessId } from "@/hooks/useBusinessId";
+import { useToast } from "@/components/ui/Toast";
 
 export type Period = "week" | "month" | "all";
 
@@ -25,56 +28,69 @@ export interface Opportunity {
   escalationCount: number;
 }
 
+async function fetchMetrics(bizId: string, period: Period): Promise<Metrics> {
+  const supabase = createClient();
+  const offset = period === "week" ? 7 : period === "month" ? 30 : null;
+  const since = offset
+    ? new Date(Date.now() - offset * 86400000).toISOString()
+    : "2000-01-01T00:00:00Z";
+  const { data: convos } = await supabase
+    .from("conversations")
+    .select("status, resolved_by")
+    .eq("business_id", bizId)
+    .gte("last_message_at", since);
+  const list = convos || [];
+  return {
+    totalConversations: list.length,
+    resolvedAutonomous: list.filter(c => c.resolved_by === "agent_autonomous").length,
+    resolvedOwnerApproved: list.filter(c => c.resolved_by === "owner_approved" || c.resolved_by === "owner_manual").length,
+    escalated: list.filter(c => ["escalated_informative", "escalated_sensitive", "escalated_urgent"].includes(c.status)).length,
+    estimatedMinutesSaved: list.filter(c => c.resolved_by?.startsWith("owner") || c.resolved_by === "agent_autonomous").length * 3,
+  };
+}
+
+async function fetchOpportunities(bizId: string): Promise<Opportunity[]> {
+  const supabase = createClient();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const [{ data: escalations }, { data: weakTopics }] = await Promise.all([
+    supabase.from("escalations")
+      .select("conversation_id, conversations!inner(business_id)")
+      .eq("conversations.business_id", bizId)
+      .gte("created_at", sevenDaysAgo),
+    supabase.from("competency_topics")
+      .select("id, name")
+      .eq("business_id", bizId)
+      .eq("knowledge_count", 0)
+      .limit(5),
+  ]);
+  return (weakTopics || []).map((t: any) => ({
+    topicId: t.id,
+    topicName: t.name,
+    escalationCount: (escalations || []).length > 0 ? 1 : 0,
+  }));
+}
+
 export function useIntelligenceData() {
   const supabase = createClient();
+  const { toast } = useToast();
+  const { data: businessId } = useBusinessId();
   const [period, setPeriod] = React.useState<Period>("week");
-  const [metrics, setMetrics] = React.useState<Metrics | null>(null);
-  const [opportunities, setOpportunities] = React.useState<Opportunity[]>([]);
-  const [businessId, setBusinessId] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(true);
   const [sendingTest, setSendingTest] = React.useState(false);
   const [testResult, setTestResult] = React.useState<{ ok: boolean; msg: string } | null>(null);
 
-  React.useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", user.id).single();
-      if (biz) setBusinessId(biz.id);
-    })();
-  }, []);
+  const { data: metrics, isLoading } = useQuery({
+    queryKey: ["intelligence-metrics", businessId, period],
+    queryFn: () => fetchMetrics(businessId!, period),
+    enabled: !!businessId,
+    staleTime: 2 * 60_000,
+  });
 
-  React.useEffect(() => {
-    if (!businessId) return;
-    fetchMetrics(businessId, period);
-    fetchOpportunities(businessId);
-  }, [businessId, period]);
-
-  async function fetchMetrics(bizId: string, p: Period) {
-    setLoading(true);
-    const now = new Date();
-    const offset = p === "week" ? 7 : p === "month" ? 30 : null;
-    const since = offset ? new Date(now.getTime() - offset * 86400000).toISOString() : "2000-01-01T00:00:00Z";
-    const { data: convos } = await supabase.from("conversations").select("status, resolved_by").eq("business_id", bizId).gte("last_message_at", since);
-    const list = convos || [];
-    setMetrics({
-      totalConversations: list.length,
-      resolvedAutonomous: list.filter(c => c.resolved_by === "agent_autonomous").length,
-      resolvedOwnerApproved: list.filter(c => c.resolved_by === "owner_approved" || c.resolved_by === "owner_manual").length,
-      escalated: list.filter(c => ["escalated_informative", "escalated_sensitive", "escalated_urgent"].includes(c.status)).length,
-      estimatedMinutesSaved: list.filter(c => c.resolved_by?.startsWith("owner") || c.resolved_by === "agent_autonomous").length * 3,
-    });
-    setLoading(false);
-  }
-
-  async function fetchOpportunities(bizId: string) {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-    const [{ data: escalations }, { data: weakTopics }] = await Promise.all([
-      supabase.from("escalations").select("conversation_id, conversations!inner(business_id)").eq("conversations.business_id", bizId).gte("created_at", sevenDaysAgo),
-      supabase.from("competency_topics").select("id, name").eq("business_id", bizId).eq("knowledge_count", 0).limit(5),
-    ]);
-    setOpportunities((weakTopics || []).map((t: any) => ({ topicId: t.id, topicName: t.name, escalationCount: (escalations || []).length > 0 ? 1 : 0 })));
-  }
+  const { data: opportunities = [] } = useQuery({
+    queryKey: ["intelligence-opportunities", businessId],
+    queryFn: () => fetchOpportunities(businessId!),
+    enabled: !!businessId,
+    staleTime: 5 * 60_000,
+  });
 
   async function sendTestSummary() {
     if (!businessId) return;
@@ -96,5 +112,5 @@ export function useIntelligenceData() {
 
   const formatTime = (mins: number) => mins >= 60 ? `${Math.round((mins / 60) * 10) / 10}h` : `${mins} min`;
 
-  return { period, setPeriod, metrics, opportunities, loading, sendingTest, testResult, sendTestSummary, formatTime };
+  return { period, setPeriod, metrics, opportunities, loading: isLoading, sendingTest, testResult, sendTestSummary, formatTime };
 }

@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
 import { ScheduleEditor } from "@/components/dashboard/ScheduleEditor";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
+import { useBusinessId } from "@/hooks/useBusinessId";
 
 type Schedule = Record<string, { open: string; close: string; closed?: boolean }>;
 interface BusinessProfile { id: string; name: string; description: string | null; address: string | null; phone_business: string | null; schedule: Schedule | null; }
@@ -24,22 +26,33 @@ const FIELDS = [
 
 const INPUT_EDIT = "w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#3DC185]/20 focus:border-[#3DC185] transition-all";
 
+async function fetchProfile(bizId: string): Promise<BusinessProfile | null> {
+  const supabase = createClient();
+  const { data } = await supabase.from("businesses")
+    .select("id, name, description, address, phone_business, schedule")
+    .eq("id", bizId).single();
+  return data as unknown as BusinessProfile ?? null;
+}
+
 export default function ProfilePage() {
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [profile, setProfile] = React.useState<BusinessProfile | null>(null);
+  const { data: businessId } = useBusinessId();
   const [editing, setEditing] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState<BusinessProfile | null>(null);
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile", businessId],
+    queryFn: () => fetchProfile(businessId!),
+    enabled: !!businessId,
+    staleTime: 5 * 60_000,
+  });
+
   React.useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from("businesses").select("id, name, description, address, phone_business, schedule").eq("owner_id", user.id).single();
-      if (data) { const p = data as unknown as BusinessProfile; setProfile(p); setForm(p); }
-    })();
-  }, []);
+    if (profile && !editing) setForm(profile);
+  }, [profile]);
 
   async function handleSave() {
     if (!form) return;
@@ -53,14 +66,15 @@ export default function ProfilePage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error al guardar");
-      setProfile(form); setEditing(false);
+      queryClient.setQueryData(["profile", businessId], form);
+      setEditing(false);
       toast({ message: json.schedule_updated ? "Tu agente ya conoce el nuevo horario." : "Perfil actualizado.", type: "success" });
     } catch (e) {
       toast({ message: `Error al guardar. ${e instanceof Error ? e.message : ""}`, type: "error" });
     } finally { setSaving(false); }
   }
 
-  if (!profile || !form) return (
+  if (!profile || !form || !businessId) return (
     <div className="flex items-center justify-center h-full">
       <Icon name="solar:refresh-linear" size={24} className="text-slate-300 animate-spin" />
     </div>

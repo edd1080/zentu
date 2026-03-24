@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
+import { useBusinessId } from "@/hooks/useBusinessId";
 
 type WStatus = "disconnected" | "connecting" | "connected" | "expired" | "error";
 interface WhatsAppInfo { id: string; whatsapp_status: WStatus; whatsapp_phone_number_id: string | null; whatsapp_token_expires_at: string | null; activated_at: string | null; }
@@ -22,26 +24,28 @@ const STATUS_CFG: Record<WStatus, CFG> = {
   error:        { sub: "Error de conexión",       iconBg: "bg-red-50",     iconColor: "text-red-500",     icon: "solar:danger-triangle-linear" },
 };
 
+async function fetchWhatsAppInfo(bizId: string): Promise<WhatsAppInfo | null> {
+  const supabase = createClient();
+  const { data } = await supabase.from("businesses")
+    .select("id, whatsapp_status, whatsapp_phone_number_id, whatsapp_token_expires_at, activated_at")
+    .eq("id", bizId).single();
+  return data as unknown as WhatsAppInfo ?? null;
+}
+
 export default function WhatsAppPage() {
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [info, setInfo] = React.useState<WhatsAppInfo | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const { data: businessId } = useBusinessId();
   const [confirming, setConfirming] = React.useState(false);
   const [acting, setActing] = React.useState(false);
 
-  React.useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from("businesses")
-        .select("id, whatsapp_status, whatsapp_phone_number_id, whatsapp_token_expires_at, activated_at")
-        .eq("owner_id", user.id).single();
-      if (data) setInfo(data as unknown as WhatsAppInfo);
-      setLoading(false);
-    }
-    load();
-  }, []);
+  const { data: info, isLoading } = useQuery({
+    queryKey: ["whatsapp", businessId],
+    queryFn: () => fetchWhatsAppInfo(businessId!),
+    enabled: !!businessId,
+    staleTime: 5 * 60_000,
+  });
 
   async function handleDisconnect() {
     if (!info) return;
@@ -52,14 +56,16 @@ export default function WhatsAppPage() {
         whatsapp_waba_id: null, whatsapp_access_token: null, whatsapp_token_expires_at: null,
       }).eq("id", info.id);
       if (error) throw error;
-      setInfo(prev => prev ? { ...prev, whatsapp_status: "disconnected", whatsapp_phone_number_id: null } : prev);
+      queryClient.setQueryData(["whatsapp", businessId], (old: WhatsAppInfo | null) =>
+        old ? { ...old, whatsapp_status: "disconnected" as WStatus, whatsapp_phone_number_id: null } : old
+      );
       setConfirming(false);
       toast({ message: "Canal desconectado. Tu historial de conversaciones está intacto.", type: "success" });
     } catch { toast({ message: "Algo salió mal al desconectar. Intenta de nuevo.", type: "error" }); }
     finally { setActing(false); }
   }
 
-  if (loading || !info) return (
+  if (isLoading || !info) return (
     <div className="flex items-center justify-center h-full">
       <Icon name="solar:refresh-linear" size={24} className="text-slate-300 animate-spin" />
     </div>
