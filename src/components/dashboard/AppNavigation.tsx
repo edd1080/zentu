@@ -98,7 +98,7 @@ export function MobileNav() {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/60 pb-safe">
-      <div className="flex h-14 items-center justify-around px-2">
+      <div className="flex h-16 items-center justify-around px-2">
         {allItems.map((item) => {
           const active = isActive(item.href, pathname);
           const badge = "countKey" in item && item.countKey ? counts[item.countKey] : 0;

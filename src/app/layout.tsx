@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans } from "next/font/google";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { SplashScreen } from "@/components/SplashScreen";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -11,12 +12,17 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "AGENTI — Tu negocio responde solo",
+  title: "Agenti — Tu negocio responde solo",
   description:
     "Agente de IA para WhatsApp que responde mensajes de clientes en nombre de tu negocio. Tú solo supervisas.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
+    title: "Agenti",
+  },
+  icons: {
+    icon: "/logo.svg",
+    apple: "/logo.svg",
   },
 };
 
@@ -25,7 +31,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#ffffff",
+  themeColor: "#3DC185",
   viewportFit: "cover",
 };
 
@@ -37,7 +43,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${dmSans.variable} font-sans antialiased`}>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <SplashScreen />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

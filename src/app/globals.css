@@ -90,6 +90,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: non
 .safe-pt { padding-top: max(0.75rem, env(safe-area-inset-top)); }
 .safe-pb { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+/* Bottom padding that clears the mobile nav (h-16 = 4rem) + iPhone home bar */
+.pb-nav-full { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
 
 /* --- Animations --- */
 @keyframes slideUpFade {

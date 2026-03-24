@@ -18,7 +18,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen w-full flex-col md:flex-row bg-(--surface-background) overflow-hidden">
       <AppSidebar />
 
-      <main className="flex-1 flex flex-col overflow-hidden relative pb-14 md:pb-0 bg-white md:rounded-tl-3xl border-t border-l border-transparent md:border-slate-200/60 md:shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.02)]">
+      <main className="flex-1 flex flex-col overflow-hidden relative pb-nav-full md:pb-0 bg-white md:rounded-tl-3xl border-t border-l border-transparent md:border-slate-200/60 md:shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.02)]">
         {/* Persistent tabs — always mounted, CSS show/hide */}
         <PersistentTabShell />
 

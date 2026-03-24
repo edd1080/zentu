@@ -6,7 +6,8 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
 import type { ActionRequired } from "@/components/dashboard/ConversationItem";
-import { PageHeader } from "@/components/dashboard/PageHeader";
+import { HomeNavBar } from "@/components/dashboard/HomeNavBar";
+import { HomeGreeting } from "@/components/dashboard/HomeGreeting";
 
 type ActivityItem = {
   id: string;
@@ -63,7 +64,11 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: business } = await supabase.from("businesses").select("id").eq("owner_id", user.id).single();
+  const { data: business } = await supabase
+    .from("businesses")
+    .select("id, name")
+    .eq("owner_id", user.id)
+    .single();
   if (!business) redirect("/onboarding");
 
   const todayStart = new Date();
@@ -77,7 +82,13 @@ export default async function DashboardPage() {
 
   const stats = { handledToday: handledToday || 0, pendingCount: pendingCount || 0, missingTopicsCount: missingTopicsCount || 0 };
 
-  const { data: recentConvs } = await supabase.from("conversations").select("id, client_name, client_phone, last_message_preview, last_message_at, status").eq("business_id", business.id).neq("status", "archived").order("last_message_at", { ascending: false }).limit(5);
+  const { data: recentConvs } = await supabase
+    .from("conversations")
+    .select("id, client_name, client_phone, last_message_preview, last_message_at, status")
+    .eq("business_id", business.id)
+    .neq("status", "archived")
+    .order("last_message_at", { ascending: false })
+    .limit(5);
 
   const recentItems: ActivityItem[] = (recentConvs || []).map((conv) => {
     let actionRequired: ActionRequired = "none";
@@ -95,49 +106,58 @@ export default async function DashboardPage() {
   });
 
   const agentStatus = stats.pendingCount > 0 ? "pending" : "active";
+  const businessName = business.name || "Mi Negocio";
 
   return (
-    <div className="flex flex-1 flex-col h-full touch-scroll w-full overflow-x-hidden bg-[#F8F9FA] md:bg-white overflow-y-auto">
-      <PageHeader title="Inicio" />
-    <div className="flex-1 px-5 py-6 md:px-8 lg:px-10 max-w-3xl mx-auto w-full space-y-10 pb-28 md:pb-12">
-      <AgentStatusBar status={agentStatus} stats={stats} />
+    <div className="flex flex-1 flex-col h-full w-full overflow-x-hidden bg-[#F8F9FA] overflow-y-auto">
+      {/* Mobile-only sticky logo navbar */}
+      <HomeNavBar />
 
-      {/* Enséñale algo nuevo */}
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl lg:text-[28px] font-medium tracking-tight text-slate-900 italic">Enséñale algo nuevo</h1>
-          <p className="text-sm text-slate-500 mt-1">Escribe, graba o adjunta una instrucción rápida para tu agente.</p>
-        </div>
-        <QuickInstruct businessId={business.id} />
-      </div>
+      {/* Scrollable page content */}
+      <div className="flex-1 w-full max-w-3xl mx-auto px-5 md:px-8 lg:px-10 pb-8 md:pb-12">
+        {/* Greeting section — scrolls with content */}
+        <HomeGreeting businessName={businessName} />
 
-      {/* Actividad reciente */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-medium text-slate-900 uppercase tracking-wider">Actividad reciente</h2>
-          <Link href="/dashboard/conversations" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors active:opacity-70">
-            Ver bandeja
-            <Icon name="solar:alt-arrow-right-linear" size={16} />
-          </Link>
-        </div>
+        <div className="space-y-10">
+          <AgentStatusBar status={agentStatus} stats={stats} />
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)]">
-          {recentItems.length > 0 ? (
-            recentItems.map((item, i) => (
-              <ActivityRow key={item.id} item={item} isLast={i === recentItems.length - 1} />
-            ))
-          ) : (
-            <div className="p-8 flex flex-col items-center justify-center text-center">
-              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 mb-3">
-                <Icon name="solar:check-circle-linear" size={24} />
-              </div>
-              <h3 className="font-semibold text-slate-900">Tu agente está al día</h3>
-              <p className="text-sm text-slate-500 mt-1">No hay conversaciones recientes.</p>
+          {/* Enséñale algo nuevo */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight text-slate-900">Enséñale algo nuevo</h2>
+              <p className="text-sm text-slate-500 mt-1">Escribe, graba o adjunta una instrucción rápida para tu agente.</p>
             </div>
-          )}
+            <QuickInstruct businessId={business.id} />
+          </div>
+
+          {/* Actividad reciente */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">Actividad reciente</h2>
+              <Link href="/dashboard/conversations" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors active:opacity-70">
+                Ver bandeja
+                <Icon name="solar:alt-arrow-right-linear" size={16} />
+              </Link>
+            </div>
+
+            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)]">
+              {recentItems.length > 0 ? (
+                recentItems.map((item, i) => (
+                  <ActivityRow key={item.id} item={item} isLast={i === recentItems.length - 1} />
+                ))
+              ) : (
+                <div className="p-8 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 mb-3">
+                    <Icon name="solar:check-circle-linear" size={24} />
+                  </div>
+                  <h3 className="font-semibold text-slate-900">Tu agente está al día</h3>
+                  <p className="text-sm text-slate-500 mt-1">No hay conversaciones recientes.</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
