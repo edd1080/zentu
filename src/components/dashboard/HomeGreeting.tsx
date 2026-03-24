@@ -21,7 +21,7 @@ export function HomeGreeting({ businessName }: HomeGreetingProps) {
   }, []);
 
   return (
-    <div className="flex items-center justify-between px-5 pt-6 pb-5">
+    <div className="flex items-center justify-between pt-6 pb-5">
       <div>
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest leading-none">
           {dayLabel}, {dateLabel}
@@ -34,7 +34,7 @@ export function HomeGreeting({ businessName }: HomeGreetingProps) {
         </p>
       </div>
 
-      <div className="w-14 h-14 rounded-2xl bg-emerald-50 border-2 border-emerald-100/80 flex items-center justify-center text-[#3DC185] text-xl font-bold shrink-0 shadow-sm select-none">
+      <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-100/80 flex items-center justify-center text-[#3DC185] text-xl font-bold shrink-0 shadow-sm select-none">
         {initials(businessName)}
       </div>
     </div>

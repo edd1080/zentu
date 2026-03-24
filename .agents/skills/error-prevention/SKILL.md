@@ -75,6 +75,18 @@ trigger: always_on
     ```
   - 📅 2026-03-19 | `process-message` rechazaba llamadas de `whatsapp-webhook` porque solo verificaba `Authorization` y el SDK enviaba `apikey`.
 
+- ❌ NUNCA colocar el auth check de una Edge Function ANTES del `try-catch` cuando el `queueId` aún no ha sido extraído del body.
+  - ✅ En funciones con cola de trabajo (`webhook_queue`), extraer el `queueId` del body ES el primer paso. Solo entonces es posible marcar el entry como `error` ante cualquier fallo.
+  - ✅ Orden correcto: `try { queueId = body.queueId; /* auth check aquí */ } catch { if (queueId) update error }`
+  - ✅ Si el auth check falla antes de extraer `queueId`, el entry queda `pending` para siempre — sin trazabilidad de error.
+  - 📅 2026-03-24 | `process-message` tenía el auth check fuera del try. Entradas nuevas se quedaban `pending` indefinidamente cuando había mismatch de header tras redespliegue.
+
+- ❌ NUNCA invocar una Edge Function de procesamiento sin actualizar la cola si la invocación falla.
+  - ✅ En `whatsapp-webhook`, si `supabase.functions.invoke('process-message')` devuelve error o lanza excepción, actualizar el entry a `status: 'error'` inmediatamente.
+  - ✅ `process-message` solo puede actualizar la cola si corre. Si no corre (startup crash, 401, red), la cola queda huérfana.
+  - ✅ Pasar siempre el header explícito en la invocación interna: `headers: { 'Authorization': \`Bearer ${KEY}\` }` para no depender del comportamiento del cliente SDK.
+  - 📅 2026-03-24 | `whatsapp-webhook` no actualizaba la cola cuando la invocación fallaba — entradas quedaban `pending` sin diagnóstico.
+
 - ❌ NUNCA configurar un secreto de Supabase con el NOMBRE de la variable como valor (ej. valor = "LLM_PRIMARY_MODEL" en vez del modelo real).
   - ✅ Verificar siempre que el valor del secreto es el dato real, no el nombre de la variable.
   - 📅 2026-03-19 | `LLM_PRIMARY_MODEL` fue configurado con valor "LLM_PRIMARY_MODEL" (el nombre) en vez de "openai/gpt-4o-mini", causando error "not a valid model ID".

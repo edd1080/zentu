@@ -1,7 +1,7 @@
 # Estado actual
 Fase activa: 6
 Bloque activo: Bloque 6.0 — Deploy a producción (Vercel)
-Última sesión: 2026-03-23
+Última sesión: 2026-03-24
 Bloque anterior completado: Fase Intermedia — Rediseño UI completo ✅
 Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento ✅
 
@@ -262,6 +262,29 @@ Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento 
 - **`refetchOnWindowFocus: false`**: App mobile-first — los focus events en PWA son frecuentes y no señalan que los datos cambiaron.
 - **Realtime + invalidation pattern**: Los handlers de Realtime NO re-fetchean manualmente — solo llaman `invalidateQueries`. TanStack deduplica y decide cuándo refetchear.
 - **`staleTime` corto en conversaciones (10s)**: La bandeja es el dato más sensible a cambios. 10s asegura frescura sin sobrecarga.
+
+## Qué se construyó (sesión 2026-03-24)
+
+### Fixes de pipeline + polish UI
+
+**Bug crítico pipeline (webhook_queue `pending` indefinido):**
+- `supabase/functions/process-message/index.ts`: auth check movido dentro del `try-catch`. `queueId` se extrae ANTES del auth check. Si auth falla, el entry se actualiza a `error` con mensaje diagnóstico.
+- `supabase/functions/whatsapp-webhook/index.ts`: si `supabase.functions.invoke('process-message')` devuelve error o lanza excepción, el entry de la cola se actualiza a `status: 'error'`. Header `Authorization` ahora se pasa explícitamente en la invocación interna.
+- Ambas funciones desplegadas en `rutzgbwziinixdrryirv`.
+
+**Polish UI — Home:**
+- `src/components/dashboard/HomeGreeting.tsx`: eliminado `px-5` duplicado (ya existe en contenedor padre). Avatar cambiado de `rounded-2xl` → `rounded-full`.
+- `src/components/dashboard/HomeNavBar.tsx`: logo cambiado de `/icon.svg` (cuadrado) → `/logo.svg` (horizontal con texto) a `22px` de alto.
+
+**Rebrand Agenti → Zentu (sesión anterior, ya commiteado):**
+- `src/app/layout.tsx`, `src/app/manifest.ts`, `src/components/SplashScreen.tsx`, `src/components/dashboard/HomeNavBar.tsx`, `src/app/_components/SplashSteps.tsx`, `src/components/onboarding/m15-whatsapp-connect.tsx`, `src/app/dashboard/settings/plan/page.tsx`, `src/app/globals.css`
+
+## Decisiones tomadas (2026-03-24)
+
+- **Auth check dentro del try**: Patrón establecido para TODAS las Edge Functions con cola de trabajo. `queueId` siempre se extrae primero para garantizar trazabilidad.
+- **Invocación con header explícito**: `whatsapp-webhook` pasa `Authorization: Bearer <KEY>` explícitamente a `process-message` para no depender del comportamiento del cliente SDK (que puede variar).
+- **HomeNavBar usa logo.svg**: El logo horizontal de Zentu (con texto) es más apropiado que el icono cuadrado en la barra de navegación. Tamaño 22px proporcional al logo.
+- **Avatar circular en Home**: `rounded-full` en lugar de `rounded-2xl` — consistente con avatares de clientes en la bandeja.
 
 ## Blockers
 - Ninguno técnico.
