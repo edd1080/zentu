@@ -23,9 +23,9 @@ export default async function AgentSandboxPage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 flex flex-col">
+        <>
             <OnboardingHeader />
             <M16AgentTesting businessName={business.name} industry={business.industry} />
-        </div>
+        </>
     );
 }

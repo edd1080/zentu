@@ -1,26 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Instrument_Serif } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import { QueryProvider } from "@/providers/QueryProvider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  subsets: ["latin"],
-  weight: "400",
-  style: "italic",
+  axes: ["opsz"],
   display: "swap",
 });
 
@@ -28,6 +14,10 @@ export const metadata: Metadata = {
   title: "AGENTI — Tu negocio responde solo",
   description:
     "Agente de IA para WhatsApp que responde mensajes de clientes en nombre de tu negocio. Tú solo supervisas.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
@@ -35,7 +25,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#1A7A5C",
+  themeColor: "#ffffff",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -45,9 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} font-sans antialiased`}
-      >
+      <body className={`${dmSans.variable} font-sans antialiased`}>
         <QueryProvider>{children}</QueryProvider>
       </body>
     </html>

@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Button } from "@/components/ui/Button";
-import { Sparkles, Edit2, Check, X } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
+import { cn } from "@/lib/utils";
 
 export interface AgentSuggestionWidgetProps {
   suggestionContent: string;
@@ -17,98 +17,90 @@ export function AgentSuggestionWidget({
   onApprove,
   onEdit,
   onReject,
-  isProcessing
+  isProcessing,
 }: AgentSuggestionWidgetProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState(suggestionContent);
 
-  const handleManualSend = () => {
+  const handleSend = () => {
     if (editValue.trim() && editValue !== suggestionContent) {
       onEdit(editValue);
     } else {
-      onApprove(); // Treated as normal approve if unchanged
+      onApprove();
     }
   };
 
   return (
-    <div className="w-full bg-white border border-(--color-primary-100) rounded-t-2xl sm:rounded-2xl p-4 shadow-lg animate-in slide-in-from-bottom-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="h-4 w-4 text-(--color-primary-600)" />
-        <span className="text-sm font-semibold text-(--color-primary-700)">
-          Borrador del Agente
+    <div className="w-full bg-emerald-50/60 border border-emerald-200/60 rounded-2xl overflow-hidden shadow-sm transition-all hover:border-emerald-300/50">
+      {/* Header */}
+      <div className="px-4 py-2.5 border-b border-emerald-100/50 flex items-center gap-2 bg-emerald-50/80">
+        <Icon name="solar:stars-linear" size={14} className="text-emerald-600 shrink-0" />
+        <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wide">
+          Sugerencia lista para enviar
         </span>
       </div>
 
-      {!isEditing ? (
-        <div className="bg-(--color-primary-50) rounded-xl p-4 mb-4 border border-(--color-primary-100)/50">
-          <p className="text-[15px] text-(--text-primary) whitespace-pre-wrap">
-            {suggestionContent}
-          </p>
-        </div>
-      ) : (
-        <textarea
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          className="w-full min-h-[100px] p-3 rounded-xl border-2 border-(--color-primary-500) focus:outline-none focus:ring-4 focus:ring-(--color-primary-100) transition-all mb-4 text-[15px] resize-none"
-          autoFocus
-        />
-      )}
+      {/* Content */}
+      <div className="p-4">
+        {isEditing ? (
+          <textarea
+            value={editValue}
+            onChange={e => setEditValue(e.target.value)}
+            className="w-full min-h-[80px] p-3 rounded-xl border-2 border-[#3DC185] focus:outline-none focus:ring-4 focus:ring-[#3DC185]/10 transition-all text-sm resize-none bg-white"
+            autoFocus
+          />
+        ) : (
+          <p className="text-sm text-emerald-950 leading-relaxed">{suggestionContent}</p>
+        )}
+      </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 w-full">
-        {!isEditing ? (
+      {/* Actions */}
+      <div className="px-4 pb-4 flex items-center gap-2">
+        {isEditing ? (
           <>
-            <Button
-              variant="text"
-              className="text-(--text-tertiary) hover:text-(--color-error-600) w-[48px] sm:w-auto h-[48px] px-0 sm:px-4 shrink-0 transition-colors"
-              onClick={onReject}
+            <button
+              onClick={() => { setIsEditing(false); setEditValue(suggestionContent); }}
               disabled={isProcessing}
+              className="flex-1 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center gap-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
             >
-              <X className="h-5 w-5 sm:hidden" />
-              <span className="hidden sm:inline">Descartar</span>
-            </Button>
-            
-            <div className="flex-1"></div>
-
-            <Button
-              variant="secondary"
-              className="h-[48px]"
-              onClick={() => setIsEditing(true)}
+              Cancelar
+            </button>
+            <button
+              onClick={handleSend}
               disabled={isProcessing}
+              className="flex-[1.5] h-12 rounded-xl bg-[#3DC185] hover:bg-[#32a873] text-white flex items-center justify-center gap-2 text-sm font-medium transition-all shadow-sm active:scale-[0.98] disabled:opacity-60"
             >
-              <Edit2 className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-
-            <Button
-              variant="primary"
-              className="h-[48px] bg-(--color-success-700) hover:bg-green-800 focus-visible:ring-(--color-success-700)"
-              onClick={onApprove}
-              isLoading={isProcessing}
-            >
-              <Check className="h-4 w-4 mr-2" />
-              Aprobar
-            </Button>
+              {isProcessing ? "Enviando..." : "Enviar"}
+              <Icon name="solar:plain-2-linear" size={18} />
+            </button>
           </>
         ) : (
-          <div className="flex w-full justify-end gap-3">
-            <Button 
-              variant="ghost" 
-              onClick={() => {
-                setIsEditing(false);
-                setEditValue(suggestionContent); // reset
-              }}
+          <>
+            <button
+              onClick={onReject}
               disabled={isProcessing}
+              className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all shrink-0 shadow-sm"
+              title="Descartar"
             >
-               Cancelar
-            </Button>
-            <Button 
-               variant="primary" 
-               onClick={handleManualSend}
-               isLoading={isProcessing}
+              <Icon name={cn("solar:close-circle-linear") as string} size={20} />
+            </button>
+            <button
+              onClick={() => setIsEditing(true)}
+              disabled={isProcessing}
+              className="flex-1 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center gap-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
             >
-                Enviar y Enseñar
-            </Button>
-          </div>
+              <Icon name="solar:pen-linear" size={16} />
+              Editar
+            </button>
+            <button
+              onClick={onApprove}
+              disabled={isProcessing}
+              className="flex-[1.5] h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 text-sm font-medium transition-all shadow-sm active:scale-[0.98] disabled:opacity-60"
+            >
+              {isProcessing ? "Aprobando..." : "Aprobar"}
+              <Icon name="solar:plain-2-linear" size={18} />
+            </button>
+          </>
         )}
       </div>
     </div>

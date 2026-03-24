@@ -3,19 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { AuthInput } from "@/components/auth/auth-input";
-import { PasswordInput } from "@/components/auth/password-input";
-import { AuthDivider } from "@/components/auth/auth-divider";
-import { GoogleButton } from "@/components/auth/google-button";
-import { AuthError } from "@/components/auth/auth-error";
+import { Icon } from "@/components/ui/Icon";
+
+const INPUT_CLS = "w-full px-5 h-12 bg-[#FCFDFD] border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#3DC185] focus:border-[#3DC185] transition-all placeholder:text-slate-400 text-slate-800";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [phonePersonal, setPhonePersonal] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,40 +22,20 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
       const res = await fetch("/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email, password, fullName,
-          phonePersonal: phonePersonal || undefined,
-        }),
+        body: JSON.stringify({ email, password, fullName, phonePersonal: phonePersonal || undefined }),
       });
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Error al crear la cuenta");
-        setLoading(false);
-        return;
-      }
-
+      if (!res.ok) { setError(data.error ?? "Error al crear la cuenta"); setLoading(false); return; }
       const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email, password,
-      });
-
-      if (signInError) {
-        router.push("/login?registered=true");
-        return;
-      }
-
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) { router.push("/login?registered=true"); return; }
       router.push(phonePersonal ? "/verify-phone" : "/onboarding");
       router.refresh();
-    } catch {
-      setError("Error de conexión. Intenta de nuevo.");
-      setLoading(false);
-    }
+    } catch { setError("Error de conexión. Intenta de nuevo."); setLoading(false); }
   }
 
   async function handleGoogleRegister() {
@@ -71,46 +49,65 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col items-center gap-2">
-        <h1 className="text-3xl font-bold" style={{ color: "var(--color-primary-700)" }}>
-          AGENTI
-        </h1>
-        <p style={{ color: "var(--text-secondary)" }}>Crea tu cuenta y configura tu agente</p>
+    <>
+      <div className="mt-4 mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Registro</h1>
+        <p className="text-sm text-slate-800 leading-relaxed">Crea tu cuenta y configura tu agente.</p>
       </div>
 
-      <AuthError message={error} />
+      {error && (
+        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-600 flex items-center gap-2">
+          <Icon name="solar:close-circle-linear" size={16} className="shrink-0" />
+          {error}
+        </div>
+      )}
 
-      <form onSubmit={handleRegister} className="flex flex-col gap-4">
-        <AuthInput id="fullName" label="Nombre completo" value={fullName}
-          onChange={setFullName} placeholder="Tu nombre" required />
-        <AuthInput id="email" label="Correo electrónico" type="email" value={email}
-          onChange={setEmail} placeholder="tu@correo.com" required />
-        <AuthInput id="password" label="Contraseña" value={password} onChange={setPassword}>
-          <PasswordInput id="password" value={password} onChange={setPassword}
-            placeholder="Mínimo 8 caracteres" />
-        </AuthInput>
-        <AuthInput id="phone" label="WhatsApp personal" labelSuffix="(opcional)"
-          type="tel" value={phonePersonal} onChange={setPhonePersonal}
-          placeholder="+502 1234 5678"
-          hint="Para recibir notificaciones urgentes y resúmenes diarios" />
-
+      <form onSubmit={handleRegister} className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="block text-xs font-medium text-slate-500">Nombre completo</label>
+          <input type="text" placeholder="Tu nombre" value={fullName} onChange={e => setFullName(e.target.value)} required className={INPUT_CLS} />
+        </div>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-medium text-slate-500">Correo electrónico</label>
+          <input type="email" placeholder="tu@correo.com" value={email} onChange={e => setEmail(e.target.value)} required className={INPUT_CLS} />
+        </div>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-medium text-slate-500">Contraseña</label>
+          <div className="relative">
+            <input type={showPw ? "text" : "password"} placeholder="Mínimo 8 caracteres" value={password} onChange={e => setPassword(e.target.value)} required minLength={8}
+              className="w-full pl-5 pr-14 h-12 bg-[#FCFDFD] border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#3DC185] focus:border-[#3DC185] transition-all placeholder:text-slate-400 text-slate-800" />
+            <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
+              <Icon name={showPw ? "solar:eye-closed-linear" : "solar:eye-linear"} size={18} />
+            </button>
+          </div>
+        </div>
+        <div className="space-y-1.5 pb-2">
+          <label className="block text-xs font-medium text-slate-500">WhatsApp personal <span className="text-slate-400 font-normal">(Opcional)</span></label>
+          <input type="tel" placeholder="+502 1234 5678" value={phonePersonal} onChange={e => setPhonePersonal(e.target.value)} className={INPUT_CLS} />
+          <p className="text-[11px] text-slate-400 pl-1">Para recibir notificaciones urgentes y resúmenes diarios</p>
+        </div>
         <button type="submit" disabled={loading}
-          className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-semibold transition-colors disabled:opacity-50"
-          style={{ backgroundColor: "var(--color-primary-700)", color: "var(--text-inverse)" }}>
-          {loading ? "Creando cuenta..." : <><UserPlus className="h-5 w-5" /> Crear cuenta</>}
+          className="w-full h-12 bg-[#3DC185] hover:bg-[#32a873] text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98] shadow-sm uppercase tracking-wider flex items-center justify-center disabled:opacity-60">
+          {loading ? "Creando cuenta..." : "Crear cuenta"}
         </button>
       </form>
 
-      <AuthDivider />
-      <GoogleButton onClick={handleGoogleRegister} />
+      <div className="mt-8 mb-6 flex items-center gap-4">
+        <div className="flex-1 h-px bg-slate-200" />
+        <span className="text-xs text-slate-500">o continuar con</span>
+        <div className="flex-1 h-px bg-slate-200" />
+      </div>
+      <div className="pb-4">
+        <button type="button" onClick={handleGoogleRegister}
+          className="w-full h-12 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors text-slate-700 font-medium text-sm">
+          <Icon name="logos:google-icon" size={20} /> Google
+        </button>
+      </div>
 
-      <p className="text-center text-sm" style={{ color: "var(--text-secondary)" }}>
+      <p className="mt-2 text-center text-sm text-slate-800">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/login" className="font-semibold" style={{ color: "var(--color-primary-700)" }}>
-          Ingresar
-        </Link>
+        <Link href="/login" className="font-semibold text-[#3DC185] hover:text-[#2a9465] transition-colors">Ingresar</Link>
       </p>
-    </div>
+    </>
   );
 }

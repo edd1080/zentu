@@ -4,9 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
-import { Button } from "@/components/ui/Button";
 import { TopicAutonomyCard, Topic, Indicator, getIndicators, canActivate } from "@/components/dashboard/TopicAutonomyCard";
-import { ChevronLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
+import { cn } from "@/lib/utils";
 
 interface AutonomyRule { id: string; topic_id: string; level: string; active: boolean; }
 type ConfirmModal = { topicId: string; topicName: string; indicators: Indicator[] } | null;
@@ -79,49 +79,55 @@ export default function AutonomyPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-(--surface-base) pb-24">
-      <div className="sticky top-0 z-10 bg-(--surface-base) border-b border-(--surface-border) px-4 pt-4 pb-3">
+    <div className="flex flex-col h-full w-full bg-[#F8F9FA] overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-4 pt-4 pb-3 shrink-0">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard/settings" className="text-(--text-secondary) hover:text-(--text-primary)"><ChevronLeft className="h-5 w-5" /></Link>
-          <h1 className="text-lg font-semibold text-(--text-primary)">Autonomía del agente</h1>
+          <Link href="/dashboard/settings" className="text-slate-400 hover:text-slate-900 transition-colors">
+            <Icon name="solar:arrow-left-linear" size={18} />
+          </Link>
+          <h1 className="text-lg font-semibold text-slate-900 tracking-tight">Autonomía del agente</h1>
         </div>
       </div>
 
-      <div className="flex-1 px-4 pt-4">
-        <p className="text-sm text-(--text-secondary) mb-4">Cuando activas la autonomía en un tema, tu agente responde directamente a tus clientes cuando está seguro. Puedes desactivarlo en cualquier momento.</p>
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 pb-24 flex flex-col gap-4">
+        <p className="text-base text-slate-600">Permite que tu agente responda automáticamente a los clientes sin pedir tu aprobación, basándose en la confianza de su conocimiento.</p>
         {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-(--text-tertiary)" /></div>
+          <div className="flex items-center justify-center py-12">
+            <Icon name="solar:refresh-linear" size={24} className="text-slate-300 animate-spin" />
+          </div>
         ) : (
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {topics.map(topic => (
               <TopicAutonomyCard key={topic.id} topic={topic} autonomous={isAutonomous(topic.id)}
                 expanded={expanded === topic.id} toggling={toggling === topic.id}
                 onExpand={() => setExpanded(expanded === topic.id ? null : topic.id)}
                 onToggle={() => handleToggle(topic)} />
             ))}
-            {topics.length === 0 && <p className="text-sm text-(--text-secondary) text-center py-12">No hay áreas configuradas en tu negocio aún.</p>}
+            {topics.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-12">No hay áreas configuradas en tu negocio aún.</p>
+            )}
           </div>
         )}
       </div>
 
       {confirmModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-6">
-          <div className="w-full max-w-md bg-white rounded-2xl p-5 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/20 backdrop-blur-sm px-4 pb-6">
+          <div className="w-full max-w-md bg-white rounded-2xl p-5 shadow-xl space-y-4">
             <div>
-              <h3 className="text-base font-semibold text-(--text-primary)">Activar autonomía en "{confirmModal.topicName}"</h3>
-              <p className="text-sm text-(--text-secondary) mt-1">Tu agente responderá solo cuando tenga alta confianza. Puedes desactivarlo cuando quieras.</p>
+              <h3 className="text-base font-semibold text-slate-900">Activar autonomía en &quot;{confirmModal.topicName}&quot;</h3>
+              <p className="text-sm text-slate-500 mt-1">Tu agente responderá solo cuando tenga alta confianza. Puedes desactivarlo cuando quieras.</p>
             </div>
             <div className="space-y-2">
               {confirmModal.indicators.map(ind => (
                 <div key={ind.label} className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <p className="text-xs text-(--text-primary)">{ind.label}: <span className="text-(--text-secondary)">{ind.value}</span></p>
+                  <Icon name="solar:check-circle-bold" size={15} className="text-emerald-500 shrink-0" />
+                  <p className="text-xs text-slate-800">{ind.label}: <span className="text-slate-500">{ind.value}</span></p>
                 </div>
               ))}
             </div>
             <div className="flex gap-2 pt-1">
-              <Button variant="secondary" className="flex-1" onClick={() => setConfirmModal(null)}>Cancelar</Button>
-              <Button variant="primary" className="flex-1" onClick={() => activateAutonomy(confirmModal.topicId)}>Activar</Button>
+              <button onClick={() => setConfirmModal(null)} className="flex-1 h-12 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Cancelar</button>
+              <button onClick={() => activateAutonomy(confirmModal.topicId)} className="flex-1 h-12 rounded-xl bg-[#3DC185] hover:bg-[#32a873] text-white text-sm font-semibold transition-colors">Activar</button>
             </div>
           </div>
         </div>

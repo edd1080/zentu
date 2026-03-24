@@ -3,77 +3,85 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  Home,
-  MessageSquare,
-  Bot,
-  BrainCircuit,
-  Settings,
-} from "lucide-react";
-import { Divider } from "@/components/ui/Divider";
+import { Icon } from "@/components/ui/Icon";
 import { useNavCounts } from "./NavCountsContext";
+import { LogoutButton } from "./LogoutButton";
 
-const navItemDefs = [
-  { name: "Inicio", href: "/dashboard", icon: Home, countKey: null },
-  { name: "Conversaciones", href: "/dashboard/conversations", icon: MessageSquare, countKey: "conversations" as const },
-  { name: "Agente", href: "/dashboard/agent", icon: Bot, countKey: "agent" as const },
-  { name: "Entrenar", href: "/dashboard/train", icon: BrainCircuit, countKey: null },
+const navItems = [
+  { name: "Inicio",       href: "/dashboard",                    icon: "solar:home-smile-linear",       countKey: null },
+  { name: "Chats",        href: "/dashboard/conversations",      icon: "solar:inbox-in-linear",         countKey: "conversations" as const },
+  { name: "Agente",       href: "/dashboard/agent",              icon: "solar:cpu-linear",              countKey: "agent" as const },
+  { name: "Entrenar",     href: "/dashboard/train",              icon: "solar:magic-stick-3-linear",    countKey: null },
 ];
 
-const bottomItemDef = { name: "Ajustes", href: "/dashboard/settings", icon: Settings };
+const settingsItem = { name: "Ajustes", href: "/dashboard/settings", icon: "solar:settings-linear" };
+
+function isActive(href: string, pathname: string) {
+  return href === "/dashboard" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
   const counts = useNavCounts();
 
   return (
-    <aside className="hidden md:flex w-[240px] flex-col bg-(--surface-card) border-r border-(--surface-border) shrink-0 h-full">
+    <aside className="hidden md:flex w-[240px] flex-col bg-[#F8F9FA] border-r border-slate-200/60 shrink-0 h-full">
+      {/* Logo */}
       <div className="flex h-14 items-center px-6">
-        <span className="font-display italic text-2xl text-(--color-primary-700)">Agenti</span>
+        <span className="text-lg font-semibold tracking-tight text-slate-900">Agenti</span>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItemDefs.map((item) => {
-          const isActive = item.href === '/dashboard'
-            ? pathname === item.href
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+      {/* Nav items */}
+      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+        {navItems.map((item) => {
+          const active = isActive(item.href, pathname);
           const badge = item.countKey ? counts[item.countKey] : 0;
-
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center relative gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-(--color-primary-50) text-(--color-primary-700)"
-                  : "text-(--text-secondary) hover:bg-(--surface-muted) hover:text-(--text-primary)"
+                "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+                active
+                  ? "bg-white shadow-sm ring-1 ring-slate-200/50 text-slate-900"
+                  : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
               )}
             >
-              <item.icon className={cn("h-5 w-5", isActive ? "fill-(--color-primary-100)" : "")} />
+              <Icon
+                name={item.icon}
+                size={20}
+                className={active ? "text-[#3DC185]" : "text-slate-400 group-hover:text-slate-600"}
+              />
               {item.name}
               {badge > 0 && (
-                <div className="absolute left-[22px] top-[8px] h-2 w-2 rounded-full bg-(--color-error-500) outline-2 outline-white" />
+                <span className="ml-auto bg-rose-500 text-white text-[10px] py-0.5 px-1.5 rounded-full font-bold leading-none">
+                  {badge}
+                </span>
               )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-3">
-        <Divider />
+      {/* Bottom: Settings + Logout */}
+      <div className="px-3 pb-4 pt-2 space-y-0.5 border-t border-slate-200/60">
         <Link
-          href={bottomItemDef.href}
+          href={settingsItem.href}
           className={cn(
-            "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors mt-2",
-            pathname === bottomItemDef.href || pathname.startsWith(`${bottomItemDef.href}/`)
-              ? "bg-(--color-primary-50) text-(--color-primary-700)"
-              : "text-(--text-secondary) hover:bg-(--surface-muted) hover:text-(--text-primary)"
+            "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+            isActive(settingsItem.href, pathname)
+              ? "bg-white shadow-sm ring-1 ring-slate-200/50 text-slate-900"
+              : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
           )}
         >
-          <bottomItemDef.icon className="h-5 w-5" />
-          {bottomItemDef.name}
+          <Icon
+            name={settingsItem.icon}
+            size={20}
+            className={isActive(settingsItem.href, pathname) ? "text-[#3DC185]" : "text-slate-400 group-hover:text-slate-600"}
+          />
+          {settingsItem.name}
         </Link>
+        <LogoutButton />
       </div>
     </aside>
   );
@@ -83,40 +91,33 @@ export function MobileNav() {
   const pathname = usePathname();
   const counts = useNavCounts();
 
-  // Hide on conversation thread view to give more space
-  if (pathname.includes("/conversations/")) {
-    return null;
-  }
+  const isSettingsSub = pathname.startsWith("/dashboard/settings/") && pathname !== "/dashboard/settings";
+  if (pathname.includes("/conversations/") || isSettingsSub) return null;
 
-  const allItemDefs = [...navItemDefs, { ...bottomItemDef, countKey: null }];
+  const allItems = [...navItems, { ...settingsItem, countKey: null }];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-(--surface-card) border-t border-(--surface-border) pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/60 pb-safe">
       <div className="flex h-14 items-center justify-around px-2">
-        {allItemDefs.map((item) => {
-          const isActive = item.href === '/dashboard'
-            ? pathname === item.href
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const badge = item.countKey ? counts[item.countKey] : 0;
-
+        {allItems.map((item) => {
+          const active = isActive(item.href, pathname);
+          const badge = "countKey" in item && item.countKey ? counts[item.countKey] : 0;
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-col items-center justify-center w-16 h-full transition-colors",
-                isActive ? "text-(--color-primary-700)" : "text-(--text-tertiary)"
+                "relative flex flex-col items-center justify-center w-16 h-full transition-colors gap-0.5",
+                active ? "text-[#3DC185]" : "text-slate-400"
               )}
             >
               <div className="relative">
-                <item.icon className={cn("h-6 w-6 mb-1", isActive ? "fill-(--color-primary-100)" : "")} />
+                <Icon name={item.icon} size={24} />
                 {badge > 0 && (
-                  <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-(--color-error-500) outline-[1.5px] outline-solid outline-white" />
+                  <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-rose-500 ring-1 ring-white" />
                 )}
               </div>
-              <span className={cn("text-[10px] font-medium leading-none", isActive ? "text-(--color-primary-700)" : "text-(--text-tertiary)")}>
-                {item.name}
-              </span>
+              <span className="text-[10px] font-medium leading-none">{item.name}</span>
             </Link>
           );
         })}

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
-import { AuthError } from "@/components/auth/auth-error";
+import { Icon } from "@/components/ui/Icon";
+import { cn } from "@/lib/utils";
 
 export default function VerifyPhonePage() {
   const router = useRouter();
@@ -11,7 +11,14 @@ export default function VerifyPhonePage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(60);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const t = setTimeout(() => setResendSeconds(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendSeconds]);
 
   function handleChange(index: number, value: string) {
     if (!/^\d?$/.test(value)) return;
@@ -23,28 +30,21 @@ export default function VerifyPhonePage() {
   }
 
   function handleKeyDown(index: number, e: React.KeyboardEvent) {
-    if (e.key === "Backspace" && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
+    if (e.key === "Backspace" && !code[index] && index > 0) inputRefs.current[index - 1]?.focus();
   }
 
   function handlePaste(e: React.ClipboardEvent) {
     e.preventDefault();
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (pasted.length === 6) {
-      setCode(pasted.split(""));
-      inputRefs.current[5]?.focus();
-    }
+    if (pasted.length === 6) { setCode(pasted.split("")); inputRefs.current[5]?.focus(); }
   }
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     const fullCode = code.join("");
     if (fullCode.length !== 6) { setError("Ingresa los 6 dígitos"); return; }
-
     setError(null);
     setLoading(true);
-
     try {
       const res = await fetch("/auth/verify-phone", {
         method: "POST",
@@ -52,7 +52,6 @@ export default function VerifyPhonePage() {
         body: JSON.stringify({ code: fullCode }),
       });
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error);
         if (data.blocked) setBlocked(true);
@@ -61,75 +60,59 @@ export default function VerifyPhonePage() {
         setLoading(false);
         return;
       }
-
       router.push("/onboarding");
       router.refresh();
-    } catch {
-      setError("Error de conexión. Intenta de nuevo.");
-      setLoading(false);
-    }
+    } catch { setError("Error de conexión. Intenta de nuevo."); setLoading(false); }
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col items-center gap-3">
-        <div
-          className="flex h-16 w-16 items-center justify-center rounded-full"
-          style={{ backgroundColor: "var(--color-primary-100)" }}
-        >
-          <ShieldCheck className="h-8 w-8" style={{ color: "var(--color-primary-700)" }} />
+    <>
+      <div className="flex justify-center mb-6 mt-4 md:mt-0">
+        <div className="w-16 h-16 rounded-full bg-[#3DC185]/10 flex items-center justify-center text-[#3DC185] shadow-sm">
+          <Icon name="solar:shield-check-linear" size={28} />
         </div>
-        <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
-          Verifica tu número
-        </h1>
-        <p className="text-center text-sm" style={{ color: "var(--text-secondary)" }}>
-          Ingresa el código de 6 dígitos que enviamos a tu WhatsApp personal
-        </p>
       </div>
 
-      <AuthError message={error} variant={blocked ? "warning" : "error"} />
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mb-2">Verifica tu número</h1>
+        <p className="text-sm text-slate-500 leading-relaxed px-4">Ingresa el código de 6 dígitos que enviamos a tu WhatsApp personal</p>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-3 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-600 flex items-center gap-2">
+          <Icon name="solar:close-circle-linear" size={16} className="shrink-0" />
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleVerify} className="flex flex-col gap-6">
-        <div className="flex justify-center gap-3" onPaste={handlePaste}>
+        <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
           {code.map((digit, i) => (
-            <input
-              key={i}
-              ref={(el) => { inputRefs.current[i] = el; }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleChange(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
+            <input key={i} ref={el => { inputRefs.current[i] = el; }}
+              type="text" inputMode="numeric" maxLength={1} value={digit}
+              onChange={e => handleChange(i, e.target.value)}
+              onKeyDown={e => handleKeyDown(i, e)}
               disabled={blocked}
-              className="h-14 w-12 rounded-lg border text-center text-2xl font-bold outline-none transition-colors disabled:opacity-50"
-              style={{
-                borderColor: error ? "var(--color-error-500)" : "var(--surface-border-strong)",
-                backgroundColor: "var(--surface-card)",
-                color: "var(--text-primary)",
-              }}
-              aria-label={`Dígito ${i + 1}`}
-            />
+              className={cn("w-12 h-12 text-center text-xl font-semibold bg-[#FCFDFD] border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3DC185] focus:border-[#3DC185] transition-all text-slate-800 disabled:opacity-50",
+                error ? "border-rose-400 text-rose-600" : "border-slate-200/80")}
+              aria-label={`Dígito ${i + 1}`} />
           ))}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading || blocked}
-          className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-semibold transition-colors disabled:opacity-50"
-          style={{ backgroundColor: "var(--color-primary-700)", color: "var(--text-inverse)" }}
-        >
-          {loading ? "Verificando..." : "Verificar"}
+        <button type="submit" disabled={loading || blocked || code.join("").length < 6}
+          className="w-full h-12 bg-[#3DC185] hover:bg-[#32a873] text-white rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center uppercase tracking-wider disabled:opacity-50">
+          {loading ? <Icon name="solar:refresh-linear" size={16} className="animate-spin" /> : "Verificar"}
         </button>
       </form>
 
-      <button
-        onClick={() => { router.push("/onboarding"); router.refresh(); }}
-        className="text-sm font-medium"
-        style={{ color: "var(--text-secondary)" }}
-      >
-        Verificar después
-      </button>
-    </div>
+      <div className="text-center mt-6 flex flex-col items-center gap-3">
+        {resendSeconds > 0
+          ? <p className="text-sm font-medium text-slate-400">Reenviar código en <span>{resendSeconds}</span>s</p>
+          : <button onClick={() => setResendSeconds(60)} className="text-sm font-medium text-[#3DC185] hover:text-[#2a9465] transition-colors">Reenviar código</button>}
+        <button onClick={() => { router.push("/onboarding"); router.refresh(); }} className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+          Verificar después
+        </button>
+      </div>
+    </>
   );
 }

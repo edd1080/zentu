@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 
 interface HealthCardProps {
   healthScore: number;
@@ -11,42 +11,42 @@ interface HealthCardProps {
 
 export function HealthCard({ healthScore, healthLevel, coveredCore, totalCore }: HealthCardProps) {
   return (
-    <section className="bg-(--color-primary-900) text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+    <section className="bg-emerald-900 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl -ml-8 -mb-8 pointer-events-none" />
+
       <div className="relative z-10">
         <div className="flex items-center gap-2 mb-4">
-          <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md">
-            <Sparkles className="h-4 w-4 text-emerald-300" />
+          <div className="w-7 h-7 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <Icon name="solar:heart-pulse-linear" size={14} className="text-emerald-300" />
           </div>
-          <span className="text-sm font-medium text-emerald-100 italic">Salud Operativa</span>
+          <span className="text-xs font-semibold text-emerald-200 uppercase tracking-wider">Salud Operativa</span>
         </div>
 
-        <div className="flex items-end gap-4 mb-6">
-          <span className="text-5xl font-display italic">{healthScore}%</span>
-          <div className="flex flex-col pb-1">
-            <span className="text-xs text-emerald-200 uppercase tracking-widest font-bold">Nivel: {healthLevel}</span>
-            <div className="h-1.5 w-24 bg-white/20 rounded-full mt-1">
-              <div
-                className="h-full bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.5)]"
-                style={{ width: `${healthScore}%` }}
-              />
+        <div className="flex items-end justify-between mb-5">
+          <div>
+            <span className="text-5xl font-semibold leading-none">{healthScore}%</span>
+            <p className="text-xs text-emerald-300 mt-1.5 font-medium">{healthLevel}</p>
+          </div>
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-1.5 bg-white/10 rounded-xl px-3 py-1.5 border border-white/10">
+              <Icon name="solar:check-circle-linear" size={13} className="text-emerald-300 shrink-0" />
+              <span className="text-xs font-semibold">{coveredCore}/{totalCore} áreas</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white/10 rounded-xl px-3 py-1.5 border border-white/10">
+              <Icon name="solar:danger-circle-linear" size={13} className="text-amber-300 shrink-0" />
+              <span className="text-xs font-semibold">{totalCore - coveredCore} sin cubrir</span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/10">
-            <span className="text-[10px] uppercase text-emerald-200 font-bold block mb-1">Áreas Cubiertas</span>
-            <span className="text-xl font-semibold">{coveredCore} / {totalCore}</span>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/10">
-            <span className="text-[10px] uppercase text-emerald-200 font-bold block mb-1">Sin Cubrir</span>
-            <span className="text-xl font-semibold">{totalCore - coveredCore}</span>
-          </div>
+        <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-emerald-400 rounded-full transition-all duration-700"
+            style={{ width: `${healthScore}%` }}
+          />
         </div>
       </div>
-
-      <div className="absolute -right-10 -top-10 h-40 w-40 bg-emerald-500/20 rounded-full blur-3xl" />
-      <div className="absolute -left-10 -bottom-10 h-40 w-40 bg-emerald-500/10 rounded-full blur-3xl" />
     </section>
   );
 }

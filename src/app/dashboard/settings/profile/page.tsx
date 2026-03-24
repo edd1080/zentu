@@ -3,27 +3,26 @@
 import * as React from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { ScheduleEditor } from "@/components/dashboard/ScheduleEditor";
-import { ChevronLeft, Loader2, Pencil } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
+import { cn } from "@/lib/utils";
 
 type Schedule = Record<string, { open: string; close: string; closed?: boolean }>;
-interface BusinessProfile {
-  id: string;
-  name: string;
-  description: string | null;
-  address: string | null;
-  phone_business: string | null;
-  schedule: Schedule | null;
+interface BusinessProfile { id: string; name: string; description: string | null; address: string | null; phone_business: string | null; schedule: Schedule | null; }
+
+function initials(name: string) {
+  return (name || "?").split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
 }
 
-const BASIC_FIELDS = [
+const FIELDS = [
   { key: "name", label: "Nombre del negocio" },
-  { key: "description", label: "Descripción" },
+  { key: "description", label: "Descripción corta" },
+  { key: "phone_business", label: "Teléfono principal" },
   { key: "address", label: "Dirección" },
-  { key: "phone_business", label: "Teléfono" },
 ] as const;
+
+const INPUT_EDIT = "w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#3DC185]/20 focus:border-[#3DC185] transition-all";
 
 export default function ProfilePage() {
   const supabase = createClient();
@@ -34,15 +33,12 @@ export default function ProfilePage() {
   const [form, setForm] = React.useState<BusinessProfile | null>(null);
 
   React.useEffect(() => {
-    async function load() {
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("businesses")
-        .select("id, name, description, address, phone_business, schedule")
-        .eq("owner_id", user.id).single();
+      const { data } = await supabase.from("businesses").select("id, name, description, address, phone_business, schedule").eq("owner_id", user.id).single();
       if (data) { const p = data as unknown as BusinessProfile; setProfile(p); setForm(p); }
-    }
-    load();
+    })();
   }, []);
 
   async function handleSave() {
@@ -57,70 +53,81 @@ export default function ProfilePage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error al guardar");
-      setProfile(form);
-      setEditing(false);
-      toast({ message: json.schedule_updated ? "Listo. Tu agente ya conoce el nuevo horario." : "Listo.", type: "success" });
+      setProfile(form); setEditing(false);
+      toast({ message: json.schedule_updated ? "Tu agente ya conoce el nuevo horario." : "Perfil actualizado.", type: "success" });
     } catch (e) {
-      toast({ message: `Algo salió mal al guardar. ${e instanceof Error ? e.message : ""}`, type: "error" });
-    } finally {
-      setSaving(false);
-    }
+      toast({ message: `Error al guardar. ${e instanceof Error ? e.message : ""}`, type: "error" });
+    } finally { setSaving(false); }
   }
 
-  if (!profile || !form) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-6 w-6 animate-spin text-(--text-tertiary)" /></div>;
-  }
+  if (!profile || !form) return (
+    <div className="flex items-center justify-center h-full">
+      <Icon name="solar:refresh-linear" size={24} className="text-slate-300 animate-spin" />
+    </div>
+  );
 
   return (
-    <div className="flex flex-col min-h-screen bg-(--surface-base) pb-24">
-      <div className="sticky top-0 z-10 bg-(--surface-base) border-b border-(--surface-border) px-4 pt-4 pb-3">
+    <div className="flex flex-col h-full w-full bg-[#F8F9FA] overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-4 pt-4 pb-3 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard/settings" className="text-(--text-secondary) hover:text-(--text-primary)"><ChevronLeft className="h-5 w-5" /></Link>
-            <h1 className="text-lg font-semibold text-(--text-primary)">Perfil del negocio</h1>
+            <Link href="/dashboard/settings" className="text-slate-400 hover:text-slate-900 transition-colors">
+              <Icon name="solar:arrow-left-linear" size={18} />
+            </Link>
+            <h1 className="text-lg font-semibold text-slate-900 tracking-tight">Perfil del negocio</h1>
           </div>
           {!editing ? (
-            <button onClick={() => { setForm(profile); setEditing(true); }} className="flex items-center gap-1.5 text-sm text-(--color-primary-700) font-medium">
-              <Pencil className="h-4 w-4" /> Editar
+            <button onClick={() => { setForm(profile); setEditing(true); }} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors">
+              <Icon name="solar:pen-linear" size={16} />
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <button onClick={() => { setForm(profile); setEditing(false); }} className="text-sm text-(--text-secondary)">Cancelar</button>
-              <Button variant="primary" className="h-8 text-sm min-h-0" onClick={handleSave} disabled={saving}>
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Guardar"}
-              </Button>
+              <button onClick={() => { setForm(profile); setEditing(false); }} className="text-sm text-slate-500 hover:text-slate-700 px-2 py-1">Cancelar</button>
+              <button onClick={handleSave} disabled={saving} className="h-8 px-4 rounded-lg bg-[#3DC185] hover:bg-[#32a873] text-white text-sm font-medium flex items-center gap-1.5 disabled:opacity-50 transition-colors">
+                {saving && <Icon name="solar:refresh-linear" size={13} className="animate-spin" />}
+                Guardar
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex-1 px-4 pt-4 space-y-4">
-        <section className="bg-white border border-(--surface-border) rounded-xl overflow-hidden">
-          {BASIC_FIELDS.map(({ key, label }) => (
-            <div key={key} className="px-4 py-3 border-b border-(--surface-border) last:border-0">
-              <p className="text-xs text-(--text-tertiary) font-medium mb-1">{label}</p>
-              {editing ? (
-                <input className="w-full text-sm text-(--text-primary) bg-transparent outline-none border-b border-(--color-primary-300) pb-0.5"
-                  value={(form[key] as string) || ""}
-                  onChange={e => setForm(prev => prev ? { ...prev, [key]: e.target.value } : prev)} />
-              ) : (
-                <p className="text-sm text-(--text-primary)">
-                  {(profile[key] as string) || <span className="text-(--text-tertiary) italic">Sin información</span>}
-                </p>
-              )}
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 pb-24 flex flex-col gap-6">
+        <div className="bg-white rounded-[24px] shadow-[0_2px_10px_rgb(0,0,0,0.02)] ring-1 ring-slate-200/50 p-6 space-y-6">
+          <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#3DC185] text-xl font-medium tracking-tight shrink-0">
+              {initials(profile.name || "MB")}
             </div>
-          ))}
-        </section>
+            <div>
+              <button disabled className="text-sm font-medium text-[#3DC185] opacity-50 cursor-not-allowed">Cambiar logo</button>
+              <p className="text-xs text-slate-500 mt-0.5">Recomendado: 512x512px</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {FIELDS.map(({ key, label }) => (
+              <div key={key}>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5 px-1">{label}</label>
+                {editing ? (
+                  <input className={INPUT_EDIT} value={(form[key] as string) || ""}
+                    onChange={e => setForm(prev => prev ? { ...prev, [key]: e.target.value } : prev)} />
+                ) : (
+                  <p className={cn("text-base text-slate-900 px-1", !(profile[key] as string) && "text-slate-400 italic text-sm")}>
+                    {(profile[key] as string) || "Sin información"}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <section>
-          <h2 className="text-sm font-semibold text-(--text-secondary) uppercase tracking-wide mb-3">Horario</h2>
-          <ScheduleEditor
-            schedule={form.schedule}
-            editing={editing}
-            onChange={schedule => setForm(prev => prev ? { ...prev, schedule } : prev)}
-          />
-          {editing && <p className="text-xs text-(--text-tertiary) mt-2 px-1">Al guardar, tu agente aprenderá el nuevo horario automáticamente.</p>}
-        </section>
+        <div className="bg-white rounded-[24px] shadow-[0_2px_10px_rgb(0,0,0,0.02)] ring-1 ring-slate-200/50 p-6">
+          <div className="mb-5">
+            <h3 className="text-base font-medium text-slate-900">Horario de atención</h3>
+            <p className="text-sm text-slate-500 mt-1">Tu agente usará este horario para informar a los clientes.</p>
+          </div>
+          <ScheduleEditor schedule={form.schedule} editing={editing} onChange={s => setForm(prev => prev ? { ...prev, schedule: s } : prev)} />
+          {editing && <p className="text-xs text-slate-400 mt-3 px-1">Al guardar, tu agente aprenderá el nuevo horario automáticamente.</p>}
+        </div>
       </div>
     </div>
   );

@@ -4,18 +4,22 @@ import * as React from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
-import { Button } from "@/components/ui/Button";
-import { ChevronLeft, Loader2, Wifi, WifiOff, AlertTriangle } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
+import { cn } from "@/lib/utils";
 
 type WStatus = "disconnected" | "connecting" | "connected" | "expired" | "error";
 interface WhatsAppInfo { id: string; whatsapp_status: WStatus; whatsapp_phone_number_id: string | null; whatsapp_token_expires_at: string | null; activated_at: string | null; }
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return <div className="flex justify-between items-center text-sm"><span className="text-slate-500">{label}</span><span className="font-medium text-slate-900 text-xs">{value}</span></div>;
+}
 
-const STATUS_CFG: Record<WStatus, { label: string; color: string; bg: string; Icon: React.ElementType }> = {
-  connected:     { label: "Conectado",        color: "text-emerald-700",           bg: "bg-emerald-100",       Icon: Wifi },
-  disconnected:  { label: "Desconectado",     color: "text-(--text-tertiary)",     bg: "bg-(--surface-muted)", Icon: WifiOff },
-  connecting:    { label: "Conectando…",      color: "text-amber-600",             bg: "bg-amber-100",         Icon: Loader2 },
-  expired:       { label: "Token expirado",   color: "text-(--color-error-700)",   bg: "bg-red-100",           Icon: AlertTriangle },
-  error:         { label: "Error de conexión",color: "text-(--color-error-700)",   bg: "bg-red-100",           Icon: AlertTriangle },
+type CFG = { sub: string; iconBg: string; iconColor: string; icon: string; dot?: string; spin?: boolean };
+const STATUS_CFG: Record<WStatus, CFG> = {
+  connected:    { sub: "Conectado correctamente", iconBg: "bg-emerald-50", iconColor: "text-emerald-500", icon: "solar:wi-fi-linear", dot: "bg-emerald-500" },
+  disconnected: { sub: "Desconectado",            iconBg: "bg-slate-100",  iconColor: "text-slate-400",   icon: "solar:wi-fi-linear" },
+  connecting:   { sub: "Conectando…",             iconBg: "bg-amber-50",   iconColor: "text-amber-500",   icon: "solar:refresh-linear", spin: true },
+  expired:      { sub: "Token expirado",          iconBg: "bg-red-50",     iconColor: "text-red-500",     icon: "solar:danger-triangle-linear" },
+  error:        { sub: "Error de conexión",       iconBg: "bg-red-50",     iconColor: "text-red-500",     icon: "solar:danger-triangle-linear" },
 };
 
 export default function WhatsAppPage() {
@@ -55,61 +59,86 @@ export default function WhatsAppPage() {
     finally { setActing(false); }
   }
 
-  if (loading || !info) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-6 w-6 animate-spin text-(--text-tertiary)" /></div>;
+  if (loading || !info) return (
+    <div className="flex items-center justify-center h-full">
+      <Icon name="solar:refresh-linear" size={24} className="text-slate-300 animate-spin" />
+    </div>
+  );
 
   const cfg = STATUS_CFG[info.whatsapp_status];
-  const { Icon } = cfg;
   const isConnected = info.whatsapp_status === "connected";
   const needsAction = info.whatsapp_status === "expired" || info.whatsapp_status === "error";
 
   return (
-    <div className="flex flex-col min-h-screen bg-(--surface-base) pb-24">
-      <div className="sticky top-0 z-10 bg-(--surface-base) border-b border-(--surface-border) px-4 pt-4 pb-3">
+    <div className="flex flex-col h-full w-full bg-[#F8F9FA] overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-4 pt-4 pb-3 shrink-0">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard/settings" className="text-(--text-secondary) hover:text-(--text-primary)"><ChevronLeft className="h-5 w-5" /></Link>
-          <h1 className="text-lg font-semibold text-(--text-primary)">Canal de WhatsApp</h1>
+          <Link href="/dashboard/settings" className="text-slate-400 hover:text-slate-900 transition-colors">
+            <Icon name="solar:arrow-left-linear" size={18} />
+          </Link>
+          <h1 className="text-lg font-semibold text-slate-900 tracking-tight">Canal de WhatsApp</h1>
         </div>
       </div>
 
-      <div className="flex-1 px-4 pt-4 space-y-4">
-        <div className="bg-white border border-(--surface-border) rounded-xl p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className={`h-10 w-10 rounded-full ${cfg.bg} flex items-center justify-center shrink-0`}>
-              <Icon className={`h-5 w-5 ${cfg.color} ${info.whatsapp_status === "connecting" ? "animate-spin" : ""}`} />
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 pb-24">
+        <div className="bg-white rounded-[24px] shadow-[0_2px_10px_rgb(0,0,0,0.02)] ring-1 ring-slate-200/50 p-6">
+          <div className="flex items-center gap-4 mb-8">
+            <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", cfg.iconBg)}>
+              <Icon name={cfg.icon} size={24} className={cn(cfg.iconColor, cfg.spin && "animate-spin")} />
             </div>
             <div>
-              <p className={`text-sm font-semibold ${cfg.color}`}>{cfg.label}</p>
-              {info.whatsapp_phone_number_id && <p className="text-xs text-(--text-tertiary)">ID: {info.whatsapp_phone_number_id}</p>}
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-medium text-slate-900 tracking-tight">Estado de conexión</h2>
+                {cfg.dot && <span className={cn("w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]", cfg.dot)} />}
+              </div>
+              <p className="text-sm text-slate-500 mt-0.5">{cfg.sub}</p>
             </div>
           </div>
-          {info.whatsapp_token_expires_at && <p className="text-xs text-(--text-secondary) border-t border-(--surface-border) pt-2">Token expira: {new Date(info.whatsapp_token_expires_at).toLocaleDateString("es-GT", { year: "numeric", month: "long", day: "numeric" })}</p>}
-          {info.activated_at && <p className="text-xs text-(--text-secondary) mt-1">Conectado desde: {new Date(info.activated_at).toLocaleDateString("es-GT", { year: "numeric", month: "long", day: "numeric" })}</p>}
-        </div>
 
-        {needsAction && (
-          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-            <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-800">{info.whatsapp_status === "expired" ? "Tu token expiró. Reconecta para seguir recibiendo mensajes." : "Hay un error con tu conexión. Reconecta para restaurar el servicio."}</p>
+          <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-3">
+            {info.whatsapp_phone_number_id && <InfoRow label="Número conectado" value={info.whatsapp_phone_number_id} />}
+            {info.whatsapp_token_expires_at && <InfoRow label="Token expira" value={new Date(info.whatsapp_token_expires_at).toLocaleDateString("es-GT", { year: "numeric", month: "long", day: "numeric" })} />}
+            {info.activated_at && <InfoRow label="Conectado desde" value={new Date(info.activated_at).toLocaleDateString("es-GT", { year: "numeric", month: "long", day: "numeric" })} />}
           </div>
-        )}
 
-        {!isConnected && <Button variant="primary" className="w-full" disabled>Reconectar WhatsApp</Button>}
-        {isConnected && <Button variant="secondary" className="w-full" onClick={() => setConfirming(true)}>Desconectar canal</Button>}
-        <p className="text-xs text-(--text-tertiary) px-1">Desconectar el canal no elimina tu historial de conversaciones ni el conocimiento de tu agente.</p>
+          {needsAction && (
+            <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-xl mb-4">
+              <Icon name="solar:danger-triangle-linear" size={15} className="text-red-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-800">
+                {info.whatsapp_status === "expired" ? "Tu token expiró. Reconecta para seguir recibiendo mensajes." : "Hay un error con tu conexión. Reconecta para restaurar el servicio."}
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button disabled className="px-5 py-2.5 bg-slate-100 text-slate-400 rounded-xl text-sm font-medium cursor-not-allowed">
+              Reconectar WhatsApp
+            </button>
+            {isConnected && (
+              <button onClick={() => setConfirming(true)} className="px-5 py-2.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-sm font-medium transition-colors">
+                Desconectar canal
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-3">Desconectar el canal no elimina tu historial de conversaciones ni el conocimiento de tu agente.</p>
+        </div>
       </div>
 
       {confirming && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-6">
-          <div className="w-full max-w-md bg-white rounded-2xl p-5 space-y-4">
-            <div>
-              <h3 className="text-base font-semibold text-(--text-primary)">¿Desconectar el canal?</h3>
-              <p className="text-sm text-(--text-secondary) mt-1">Tu agente dejará de recibir y responder mensajes. Tu historial y conocimiento quedan intactos.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setConfirming(false)} />
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm relative z-10 shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-4 text-rose-500">
+              <Icon name="solar:danger-triangle-linear" size={24} />
             </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" className="flex-1" onClick={() => setConfirming(false)} disabled={acting}>Cancelar</Button>
-              <Button variant="destructive" className="flex-1" onClick={handleDisconnect} disabled={acting}>
-                {acting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Desconectar"}
-              </Button>
+            <h3 className="text-lg font-medium text-slate-900 mb-2">¿Desconectar canal?</h3>
+            <p className="text-sm text-slate-500 mb-6">El agente dejará de recibir y responder mensajes inmediatamente. Tu historial y el conocimiento del agente permanecerán guardados.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirming(false)} disabled={acting} className="flex-1 py-2.5 px-4 bg-slate-50 text-slate-700 font-medium rounded-xl hover:bg-slate-100 transition-colors text-sm disabled:opacity-50">Cancelar</button>
+              <button onClick={handleDisconnect} disabled={acting} className="flex-1 py-2.5 px-4 bg-rose-500 text-white font-medium rounded-xl hover:bg-rose-600 transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2">
+                {acting && <Icon name="solar:refresh-linear" size={14} className="animate-spin" />}
+                Desconectar
+              </button>
             </div>
           </div>
         </div>

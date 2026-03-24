@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { AlertTriangle, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { Icon } from "@/components/ui/Icon";
 
 interface TrainingOpportunityCardProps {
   topicName: string;
@@ -14,18 +13,21 @@ export function TrainingOpportunityCard({ topicName, escalationCount, topicId }:
   return (
     <Link
       href={`/dashboard/agent?train=${encodeURIComponent(topicName)}`}
-      className="flex items-center gap-3 px-4 py-3 bg-white border border-(--surface-border) rounded-xl hover:border-(--color-primary-700) hover:bg-emerald-50 transition-colors group"
+      className="flex flex-col gap-3 p-4 bg-amber-50/60 border border-amber-200/60 rounded-2xl hover:shadow-sm hover:border-amber-300/80 transition-all group"
     >
-      <div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
+      <div className="w-9 h-9 rounded-xl bg-amber-100/80 flex items-center justify-center shrink-0">
+        <Icon name="solar:danger-triangle-linear" size={17} className="text-amber-600" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-(--text-primary) truncate">{topicName}</p>
-        <p className="text-xs text-(--text-secondary)">
-          {escalationCount} situación{escalationCount !== 1 ? 'es' : ''} en los últimos 7 días
+        <p className="text-sm font-semibold text-slate-900 truncate">{topicName}</p>
+        <p className="text-xs text-slate-500 mt-0.5">
+          {escalationCount} situación{escalationCount !== 1 ? "es" : ""} sin respuesta en los últimos 7 días
         </p>
       </div>
-      <ChevronRight className="h-4 w-4 text-(--text-tertiary) group-hover:text-(--color-primary-700) shrink-0" />
+      <div className="flex items-center gap-1 text-xs font-medium text-[#3DC185] group-hover:gap-2 transition-all">
+        <span>Entrenar ahora</span>
+        <Icon name="solar:alt-arrow-right-linear" size={12} />
+      </div>
     </Link>
   );
 }
