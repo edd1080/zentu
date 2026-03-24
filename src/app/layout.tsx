@@ -12,17 +12,17 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Agenti — Tu negocio responde solo",
+  title: "Zentu — Tu negocio responde solo",
   description:
     "Agente de IA para WhatsApp que responde mensajes de clientes en nombre de tu negocio. Tú solo supervisas.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Agenti",
+    title: "Zentu",
   },
   icons: {
-    icon: "/logo.svg",
-    apple: "/logo.svg",
+    icon: "/icon.svg",
+    apple: "/icon.svg",
   },
 };
 

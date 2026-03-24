@@ -67,7 +67,7 @@ export function Step2() {
       <div className="h-[45%] bg-white px-8 pt-10 pb-4 flex flex-col items-center text-center rounded-t-3xl -mt-6 relative z-20">
         <h2 className="text-3xl font-semibold text-slate-900 tracking-tight mb-4">Aprende de tu negocio</h2>
         <p className="text-sm text-slate-500 leading-relaxed px-2">
-          Sube tus documentos y PDFs. Agenti sabrá exactamente qué y cómo responder a tus clientes automáticamente.
+          Sube tus documentos y PDFs. Zentu sabrá exactamente qué y cómo responder a tus clientes automáticamente.
         </p>
       </div>
     </div>

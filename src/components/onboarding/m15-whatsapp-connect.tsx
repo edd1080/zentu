@@ -49,7 +49,7 @@ export function M15WhatsappConnect() {
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-zinc-900 mb-2">Conecta tu WhatsApp</h1>
                     <p className="text-sm text-zinc-500 max-w-sm mx-auto">
-                        AGENTI funcionará como el primer punto de contacto. Necesitamos vincular la cuenta oficial de WhatsApp Business.
+                        Zentu funcionará como el primer punto de contacto. Necesitamos vincular la cuenta oficial de WhatsApp Business.
                     </p>
                 </div>
 

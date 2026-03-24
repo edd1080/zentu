@@ -29,7 +29,7 @@ export function AppSidebar() {
     <aside className="hidden md:flex w-[240px] flex-col bg-[#F8F9FA] border-r border-slate-200/60 shrink-0 h-full">
       {/* Logo + Beta pill */}
       <div className="flex h-14 items-center gap-2 px-6">
-        <span className="text-lg font-semibold tracking-tight text-slate-900">Agenti</span>
+        <span className="text-lg font-semibold tracking-tight text-slate-900">Zentu</span>
         <span className="px-1.5 py-0.5 rounded-md bg-white border border-slate-200/60 text-xs text-slate-500 shadow-sm leading-none">Beta</span>
       </div>
 

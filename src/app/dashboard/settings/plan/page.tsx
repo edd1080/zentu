@@ -82,7 +82,7 @@ export default function PlanPage() {
             <Icon name="solar:headphones-round-sound-linear" size={20} className="text-slate-400" />
             <h3 className="text-base font-medium text-slate-900">Soporte técnico</h3>
           </div>
-          <p className="text-sm text-slate-500 mt-1 mb-4">¿Tienes dudas o algún problema? Durante la fase piloto, puedes escribir directamente a tu contacto asignado en AGENTI.</p>
+          <p className="text-sm text-slate-500 mt-1 mb-4">¿Tienes dudas o algún problema? Durante la fase piloto, puedes escribir directamente a tu contacto asignado en Zentu.</p>
           <button disabled className="px-5 py-2.5 border border-slate-200 text-slate-400 rounded-xl text-sm font-medium cursor-not-allowed">Enviar mensaje al equipo</button>
         </div>
       </div>

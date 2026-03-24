@@ -7,8 +7,8 @@ export function SplashScreen() {
 
   useEffect(() => {
     // Show only once per session (PWA lifecycle)
-    if (sessionStorage.getItem("agenti_splash_shown")) return;
-    sessionStorage.setItem("agenti_splash_shown", "1");
+    if (sessionStorage.getItem("zentu_splash_shown")) return;
+    sessionStorage.setItem("zentu_splash_shown", "1");
 
     setPhase("visible");
     const t1 = setTimeout(() => setPhase("fading"), 1600);
@@ -36,9 +36,9 @@ export function SplashScreen() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo.svg"
-          alt="Agenti"
-          style={{ height: "36px", width: "auto" }}
+          src="/icon.svg"
+          alt="Zentu"
+          style={{ height: "88px", width: "88px", borderRadius: "20px" }}
         />
       </div>
     </div>
