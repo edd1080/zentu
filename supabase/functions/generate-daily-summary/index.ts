@@ -74,7 +74,7 @@ function buildDailySummaryMessage(params: {
     lines.push(``)
     lines.push(`💡 *Temas donde tu agente puede mejorar:*`)
     weakTopicNames.slice(0, 3).forEach(name => lines.push(`  • ${name}`))
-    lines.push(`Abre AGENTI → Agente → Inteligencia para ver las oportunidades.`)
+    lines.push(`Abre Zentu → Agente → Inteligencia para ver las oportunidades.`)
   }
 
   if (type === 'first_week') {

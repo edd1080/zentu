@@ -7,8 +7,8 @@ declare const EdgeRuntime: {
     waitUntil(promise: Promise<unknown>): void
 }
 
-const VERIFY_TOKEN = Deno.env.get("WHATSAPP_WEBHOOK_VERIFY_TOKEN") || "agenti-token-seguro-123"
-const APP_SECRET = Deno.env.get("WHATSAPP_APP_SECRET") || "6ae8bbe87615bb7dbe368248eb670f2e"
+const VERIFY_TOKEN = Deno.env.get("WHATSAPP_WEBHOOK_VERIFY_TOKEN")
+const APP_SECRET = Deno.env.get("WHATSAPP_APP_SECRET")
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 

@@ -85,7 +85,7 @@ serve(async (req: Request) => {
     const isMultimodal = (type === 'voice_note' && audioBase64) || ((type === 'image_ocr' || type === 'pdf') && fileBase64)
 
     // 7. Build system prompt
-    const systemPromptBase = `Eres el Gerente de Inteligencia de AGENTI.
+    const systemPromptBase = `Eres el Gerente de Inteligencia de Zentu.
 Tu tarea es transformar una instrucción informal del dueño de un negocio en un ítem de conocimiento estructurado (KnowledgeItem).
 
 TEMAS EXISTENTES DEL NEGOCIO: ${topicsList}

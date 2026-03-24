@@ -236,8 +236,8 @@ serve(async (req: Request) => {
                 body: { 
                     owner_id: business.owner_id, 
                     title: `📥 Actividad: ${business.name}`, 
-                    body: `${clientName} envió un mensaje. AGENTI está revisando.`,
-                    action_url: "http://localhost:3001/dashboard"
+                    body: `${clientName} envió un mensaje. Zentu está revisando.`,
+                    action_url: "https://zentu.chat/dashboard"
                 },
                 headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
             })
@@ -386,7 +386,7 @@ CLIENTE: ${msgContent}`
                                     owner_id: business.owner_id, 
                                     title: `${levelEmoji} Escalamiento: ${business.name}`, 
                                     body: agentOutput.escalation_reason || "Nueva consulta requiere tu atención.",
-                                    action_url: "http://localhost:3001/dashboard"
+                                    action_url: "https://zentu.chat/dashboard"
                                 },
                                 headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
                             })
@@ -448,8 +448,8 @@ CLIENTE: ${msgContent}`
                             body: {
                                 owner_id: business.owner_id,
                                 title: `💬 Sugerencia: ${business.name}`,
-                                body: `AGENTI preparó una respuesta para ${clientName}.`,
-                                action_url: "http://localhost:3001/dashboard"
+                                body: `Zentu preparó una respuesta para ${clientName}.`,
+                                action_url: "https://zentu.chat/dashboard"
                             },
                             headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
                         })

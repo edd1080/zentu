@@ -51,8 +51,8 @@ export async function callPrimaryLLM(systemPrompt: string, userPrompt: string, o
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${apiKey}`,
-            "HTTP-Referer": "https://agenti.sh",
-            "X-Title": "AGENTI-Primary"
+            "HTTP-Referer": "https://zentu.chat",
+            "X-Title": "Zentu-Primary"
         },
         body: JSON.stringify(payload)
     });
@@ -114,8 +114,8 @@ export async function callFastLLM(systemPrompt: string, userPrompt: string, opti
             "Content-Type": "application/json",
             "Authorization": `Bearer ${apiKey}`,
             // Optional OpenRouter headers
-            "HTTP-Referer": "https://agenti.sh",
-            "X-Title": "AGENTI"
+            "HTTP-Referer": "https://zentu.chat",
+            "X-Title": "Zentu"
         },
         body: JSON.stringify(payload)
     });
