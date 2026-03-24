@@ -158,6 +158,18 @@ trigger: always_on
   - ✅ Verificar siempre que el `old_string` es lo suficientemente específico antes de activar `replace_all`. Si hay duda, reemplazar ocurrencia por ocurrencia.
   - 📅 2026-03-23 | Patrón `Loader2` con `replace_all` en sesión anterior convirtió todas las ocurrencias (incluidas dentro de strings de comentario) en `LOADER_PLACEHOLDER`.
 
+## Deploy / Producción
+
+- ❌ NUNCA commitar cambios en archivos de código sin verificar si hay assets relacionados (SVGs, imágenes, fuentes) que también fueron actualizados localmente y necesitan commitearse.
+  - ✅ Antes de cualquier commit que toque componentes que referencian assets estáticos, correr `git status` y revisar si hay archivos en `public/` sin stagear.
+  - 📅 2026-03-24 | `public/logo.svg` fue actualizado localmente pero nunca commiteado. Vercel y todos los usuarios veían el logo viejo durante días.
+
+- ❌ NUNCA dejar un fallback hardcodeado en secrets de Edge Functions (`|| "valor-default"`).
+  - ✅ Si el secret es obligatorio para que la función corra, lanzar un error explícito si no está presente. Un fallback inseguro puede exponer el sistema en producción.
+  - 📅 2026-03-24 | `WHATSAPP_WEBHOOK_VERIFY_TOKEN` tenía fallback `"agenti-token-seguro-123"` — cualquier request podía verificar el webhook con ese token conocido.
+
+- ✅ El `WHATSAPP_WEBHOOK_VERIFY_TOKEN` es un token que el developer INVENTA — Meta no lo provee. Se genera aleatoriamente, se configura en Supabase secrets Y en Meta Developer Console al registrar el webhook. Ambos lados deben tener el mismo valor.
+
 ## Protocolo post-task
 
 Al finalizar cada task:

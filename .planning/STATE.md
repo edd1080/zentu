@@ -1,7 +1,8 @@
 # Estado actual
 Fase activa: 6
-Bloque activo: Bloque 6.0 — Deploy a producción (Vercel)
-Última sesión: 2026-03-24
+Bloque activo: Sesión Intermedia — Bug fixes y mejoras (pre 6.2)
+Última sesión: 2026-03-24 (segunda sesión)
+Bloques completados: 6.0 ✅ | 6.1 core ✅
 Bloque anterior completado: Fase Intermedia — Rediseño UI completo ✅
 Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento ✅
 
@@ -262,6 +263,52 @@ Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento 
 - **`refetchOnWindowFocus: false`**: App mobile-first — los focus events en PWA son frecuentes y no señalan que los datos cambiaron.
 - **Realtime + invalidation pattern**: Los handlers de Realtime NO re-fetchean manualmente — solo llaman `invalidateQueries`. TanStack deduplica y decide cuándo refetchear.
 - **`staleTime` corto en conversaciones (10s)**: La bandeja es el dato más sensible a cambios. 10s asegura frescura sin sobrecarga.
+
+## Qué se construyó (sesión 2026-03-24 — segunda sesión)
+
+### Bloques 6.0 y 6.1 core — Producción funcionando en zentu.chat
+
+**Logo fix:**
+- `public/logo.svg`: commiteado el wordmark Zentu correcto (llevaba días desactualizado localmente)
+- `AppNavigation.tsx`: sidebar desktop ahora muestra `<img src="/logo.svg">` en lugar de texto plano
+
+**Rebrand completo en Edge Functions:**
+- `process-message`: action_url localhost → https://zentu.chat/dashboard (×3), bodies "AGENTI" → "Zentu"
+- `whatsapp-webhook`: eliminados defaults hardcodeados inseguros de VERIFY_TOKEN y APP_SECRET
+- `_shared/llm`: HTTP-Referer agenti.sh → zentu.chat, X-Title → Zentu
+- `_shared/multimodal`: mismo rebrand
+- `generate-daily-summary`: mensaje WhatsApp "Abre AGENTI" → "Abre Zentu"
+- `process-quick-instruct`: system prompt rebrandeado
+
+**Configuración de producción (manual):**
+- `WHATSAPP_WEBHOOK_VERIFY_TOKEN` generado y configurado en Supabase secrets
+- Webhook URL registrado en Meta: `https://rutzgbwziinixdrryirv.supabase.co/functions/v1/whatsapp-webhook`
+- Supabase Auth redirect URL: `https://zentu.chat/**` agregada
+- Smoke test completo exitoso: mensaje WhatsApp → webhook_queue completed → Suggestion creada → visible en dashboard
+
+**Decisiones:**
+- Permanecer en Meta Development mode por ahora (mensajes entrantes funcionan igual; Live mode solo necesario para outbound fuera de ventana 24h)
+- Sesión intermedia de bug fixes y mejoras antes de continuar con 6.2/6.3
+
+## DoD Bloque 6.0 — COMPLETO ✅
+- [x] App accesible en dominio público HTTPS (zentu.chat)
+- [x] Env vars configuradas en Vercel y Supabase
+- [x] Edge Functions ACTIVE en Supabase prod
+- [x] Smoke test login→onboarding→QuickInstruct pasa en prod
+
+## DoD Bloque 6.1 — CORE COMPLETO ✅ (pendientes menores)
+- [x] Mensaje real genera Suggestion
+- [ ] Message Templates aprobados en Meta (no bloqueante aún)
+- [ ] Embedded Signup con cuenta real (bloqueante para 6.3)
+
+## Blockers para continuar Fase 6
+- Embedded Signup real para que nuevos negocios conecten su WhatsApp
+- Message Templates aprobados (para outbound fuera de 24h)
+- Lista de bugs/mejoras del usuario para sesión intermedia
+
+## Próximo paso
+**Sesión Intermedia: Bug fixes y mejoras** (lista a entregar por el usuario)
+Luego: Bloque 6.2 — Landing page, Bloque 6.3 — Go-live tests
 
 ## Qué se construyó (sesión 2026-03-24)
 
