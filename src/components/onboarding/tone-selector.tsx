@@ -39,7 +39,7 @@ export function ToneSelector({ value, onChange }: ToneSelectorProps) {
                     className={cn(
                         "flex flex-col text-left p-4 rounded-xl border-2 transition-all",
                         value === tone.id
-                            ? "border-emerald-500 bg-emerald-50/20"
+                            ? "border-[#3DC185] bg-[#3DC185]/5"
                             : "border-zinc-200 bg-white hover:border-zinc-300"
                     )}
                 >
@@ -47,7 +47,7 @@ export function ToneSelector({ value, onChange }: ToneSelectorProps) {
                         <span className="text-lg">{tone.emoji}</span>
                         <span className={cn(
                             "font-semibold text-sm",
-                            value === tone.id ? "text-emerald-900" : "text-zinc-900"
+                            value === tone.id ? "text-slate-900" : "text-zinc-900"
                         )}>
                             {tone.label}
                         </span>

@@ -66,9 +66,25 @@ Principio: de adentro hacia afuera (DB → backend → motor → frontend).
 
 | Bloque | Nombre | DoD resumido |
 |---|---|---|
+| 6.0 | Deploy a producción (Vercel) | App accesible en dominio público HTTPS; todas las env vars en Vercel; Edge Functions en Supabase prod ACTIVE; smoke test login→onboarding→QuickInstruct pasa en prod |
 | 6.1 | Migración a Meta producción | Mensaje real genera Suggestion; Message Templates aprobados; Embedded Signup funciona con cuenta real |
 | 6.2 | Landing page | Demo interactiva para 6 industrias; CTA pre-carga industria; carga < 2s en móvil 4G |
 | 6.3 | Pruebas de go-live | 7 flujos críticos pasan con 3 usuarios sin asistencia; 0 errores 5xx; onboarding promedio < 20 min; aprobación sin edición > 50% |
+
+### Bloque 6.0 — Deploy a producción (Vercel) — Detalle
+
+**Pasos obligatorios:**
+1. Crear proyecto en Vercel y conectar repositorio GitHub
+2. Configurar todas las variables de entorno en Vercel Dashboard:
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `OPENROUTER_API_KEY`, `LLM_PRIMARY_MODEL`, `LLM_FAST_MODEL`, `LLM_MULTIMODAL_MODEL`
+   - `META_VERIFY_TOKEN`, `META_WHATSAPP_TOKEN`, `META_PHONE_NUMBER_ID`
+   - `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`
+3. Desplegar Edge Functions en Supabase producción (`supabase functions deploy --project-ref <PROD_REF>`)
+4. Actualizar webhook URL en Meta Developer Portal → dominio Vercel
+5. Verificar Auth callback URL en Supabase → agregar dominio Vercel como Redirect URL
+6. Smoke test end-to-end en producción: registro → onboarding → QuickInstruct → conversación
 
 ---
 

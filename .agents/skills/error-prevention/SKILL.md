@@ -136,6 +136,16 @@ trigger: always_on
 
 ---
 
+## UI / Componentes Reutilizables
+
+- ❌ NUNCA mezclar el header de navegación con los controles de filtro en un mismo bloque sticky.
+  - ✅ `PageHeader` es solo título + acción opcional. Filtros, búsqueda y tabs van en una sección separada con `pt-4 pb-3`.
+  - 📅 2026-03-23 | En `conversations/layout.tsx`, el header tenía título + search + tabs + filtros en un solo bloque, lo que dejaba los elementos pegados al borde inferior del nav sin respiración visual.
+
+- ❌ NUNCA usar `replace_all: true` en Edit cuando el patrón a reemplazar puede coincidir con strings no deseados.
+  - ✅ Verificar siempre que el `old_string` es lo suficientemente específico antes de activar `replace_all`. Si hay duda, reemplazar ocurrencia por ocurrencia.
+  - 📅 2026-03-23 | Patrón `Loader2` con `replace_all` en sesión anterior convirtió todas las ocurrencias (incluidas dentro de strings de comentario) en `LOADER_PLACEHOLDER`.
+
 ## Protocolo post-task
 
 Al finalizar cada task:

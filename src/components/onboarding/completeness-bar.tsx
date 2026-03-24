@@ -36,7 +36,7 @@ export function CompletenessBar({ fields }: CompletenessBarProps) {
                     <div
                         className={cn(
                             "h-full rounded-full transition-all duration-500",
-                            completeness === 100 ? "bg-emerald-500" : "bg-zinc-600"
+                            completeness === 100 ? "bg-[#3DC185]" : "bg-zinc-600"
                         )}
                         style={{ width: `${completeness}%` }}
                     />

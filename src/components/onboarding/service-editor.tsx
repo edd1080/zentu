@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Link as LinkIcon, Loader2, Square, AlertCircle } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
 
 interface ServiceEditorProps {
@@ -140,13 +140,13 @@ export function ServiceEditor({ value, onChange, isProcessing = false }: Service
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder="Ejemplo: Corte de pelo hombre - $250. Tinte básico - Desde $800. Solo atendemos con cita previa..."
-                    className="w-full min-h-[160px] p-4 text-sm bg-zinc-50 border border-zinc-200 rounded-xl resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder:text-zinc-400"
+                    className="w-full min-h-[160px] p-4 text-sm bg-zinc-50 border border-zinc-200 rounded-xl resize-y focus:outline-none focus:ring-2 focus:ring-[#3DC185]/20 focus:border-[#3DC185] placeholder:text-zinc-400"
                     disabled={isProcessing || isTranscribing || isScraping}
                 />
                 {(isTranscribing || isScraping) && (
                     <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl backdrop-blur-[1px]">
-                        <div className="flex flex-col items-center gap-2 text-emerald-700">
-                            <Loader2 className="w-6 h-6 animate-spin" />
+                        <div className="flex flex-col items-center gap-2 text-[#3DC185]">
+                            <Icon name="solar:refresh-linear" size={24} className="animate-spin" />
                             <span className="text-xs font-semibold">
                                 {isTranscribing ? "Transcribiendo nota de voz..." : "Extrayendo info del link..."}
                             </span>
@@ -157,7 +157,7 @@ export function ServiceEditor({ value, onChange, isProcessing = false }: Service
 
             {error && (
                 <div className="text-xs text-amber-700 bg-amber-50 rounded-lg p-3 flex items-start gap-2 border border-amber-200">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <Icon name="solar:danger-circle-linear" size={16} className="shrink-0 mt-0.5" />
                     <p>{error}</p>
                 </div>
             )}
@@ -176,7 +176,7 @@ export function ServiceEditor({ value, onChange, isProcessing = false }: Service
                             className="p-1 hover:bg-red-100 rounded text-red-700"
                             title="Detener"
                         >
-                            <Square className="w-4 h-4" />
+                            <Icon name="solar:stop-linear" size={16} />
                         </button>
                     </div>
                 ) : (
@@ -186,7 +186,7 @@ export function ServiceEditor({ value, onChange, isProcessing = false }: Service
                         onClick={handleStartRecording}
                         disabled={isProcessing || isTranscribing || isScraping}
                     >
-                        <Mic className="w-4 h-4 text-zinc-500" />
+                        <Icon name="solar:microphone-linear" size={16} className="text-zinc-500" />
                         Dictar
                     </button>
                 )}
@@ -204,7 +204,7 @@ export function ServiceEditor({ value, onChange, isProcessing = false }: Service
                         onClick={() => setShowLinkInput(!showLinkInput)}
                         disabled={isProcessing || isScraping || isTranscribing}
                     >
-                        <LinkIcon className="w-4 h-4 text-zinc-500" />
+                        <Icon name="solar:link-linear" size={16} className="text-zinc-500" />
                         {showLinkInput ? "Cerrar Link" : "Desde Link"}
                     </button>
                 )}

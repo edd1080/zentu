@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Briefcase } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { CompletenessBar } from "./completeness-bar";
 import { ScheduleEditor } from "./schedule-editor";
 import { ServiceEditor } from "./service-editor";
@@ -79,8 +79,8 @@ export function M13KnowledgeCapture({ initialIndustry = "other" }: { initialIndu
                 {/* BLOCK 1: Essentials */}
                 <section id="block-1" className="flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold uppercase tracking-wider mb-4 border border-emerald-100">
-                            <Briefcase className="w-3.5 h-3.5" />
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#3DC185]/10 text-[#3DC185] text-xs font-semibold uppercase tracking-wider mb-4 border border-[#3DC185]/20">
+                            <Icon name="solar:case-linear" size={14} />
                             {INDUSTRY_LABELS[initialIndustry] || INDUSTRY_LABELS.other}
                         </div>
                         <h2 className="text-xl font-bold tracking-tight text-zinc-900 mb-1">Lo Básico</h2>
@@ -193,9 +193,9 @@ export function M13KnowledgeCapture({ initialIndustry = "other" }: { initialIndu
                         <button
                             onClick={handleFinish}
                             disabled={isSubmitting || !fields.name || !fields.services || !fields.tone}
-                            className="w-full flex items-center justify-center py-4 px-6 rounded-full bg-emerald-600 text-white font-medium shadow-sm transition-all focus:ring-4 focus:ring-emerald-600/20 disabled:opacity-50 hover:bg-emerald-700 active:scale-[0.98]"
+                            className="w-full h-12 flex items-center justify-center rounded-xl bg-[#3DC185] text-white font-medium shadow-sm transition-all focus:ring-4 focus:ring-[#3DC185]/20 disabled:opacity-50 hover:bg-[#32a873] active:scale-[0.98]"
                         >
-                            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Completar Configuración"}
+                            {isSubmitting ? <Icon name="solar:refresh-linear" size={20} className="animate-spin" /> : "Completar Configuración"}
                         </button>
                     </div>
                 </div>

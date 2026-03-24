@@ -52,8 +52,8 @@ export function ScheduleEditor({ value, onChange }: ScheduleEditorProps) {
                         <button
                             onClick={() => toggleDay(day.id)}
                             className={cn(
-                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2",
-                                data.active ? "bg-emerald-500" : "bg-zinc-200"
+                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#3DC185] focus:ring-offset-2",
+                                data.active ? "bg-[#3DC185]" : "bg-zinc-200"
                             )}
                             aria-pressed={data.active}
                         >

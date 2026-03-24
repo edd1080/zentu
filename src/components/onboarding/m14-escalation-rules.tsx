@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ShieldAlert, BadgeInfo, AlertTriangle } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 
 type Rule = {
     id: string;
@@ -64,10 +64,10 @@ export function M14EscalationRules() {
 
     const getIconForLevel = (level: string) => {
         switch (level) {
-            case "informative": return <BadgeInfo className="w-5 h-5 text-blue-500" />;
-            case "sensitive": return <AlertTriangle className="w-5 h-5 text-amber-500" />;
-            case "urgent": return <ShieldAlert className="w-5 h-5 text-red-500" />;
-            default: return <BadgeInfo className="w-5 h-5 text-zinc-400" />;
+            case "informative": return <Icon name="solar:info-circle-linear" size={20} className="text-blue-500" />;
+            case "sensitive": return <Icon name="solar:danger-triangle-linear" size={20} className="text-amber-500" />;
+            case "urgent": return <Icon name="solar:shield-warning-linear" size={20} className="text-red-500" />;
+            default: return <Icon name="solar:info-circle-linear" size={20} className="text-zinc-400" />;
         }
     };
 
@@ -83,7 +83,7 @@ export function M14EscalationRules() {
     if (isLoading) {
         return (
             <div className="pt-32 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+                <Icon name="solar:refresh-linear" size={32} className="animate-spin text-zinc-400" />
             </div>
         );
     }
@@ -118,7 +118,7 @@ export function M14EscalationRules() {
                             </div>
                             <div className="flex items-center">
                                 {/* Simple Checkbox / Switch simulation */}
-                                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${rule.active ? "bg-emerald-500" : "bg-zinc-300"}`}>
+                                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${rule.active ? "bg-[#3DC185]" : "bg-zinc-300"}`}>
                                     <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${rule.active ? "translate-x-4" : "translate-x-0"}`} />
                                 </div>
                             </div>
@@ -138,9 +138,9 @@ export function M14EscalationRules() {
                     <button
                         onClick={handleSave}
                         disabled={isSubmitting}
-                        className="w-full flex items-center justify-center py-4 px-6 rounded-full bg-zinc-900 text-white font-medium shadow-sm transition-all focus:ring-4 focus:ring-zinc-900/20 disabled:opacity-50 hover:bg-zinc-800 active:scale-[0.98]"
+                        className="w-full h-12 flex items-center justify-center rounded-xl bg-zinc-900 text-white font-medium shadow-sm transition-all disabled:opacity-50 hover:bg-zinc-800 active:scale-[0.98]"
                     >
-                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar Recomendaciones"}
+                        {isSubmitting ? <Icon name="solar:refresh-linear" size={20} className="animate-spin" /> : "Guardar Recomendaciones"}
                     </button>
                     <p className="text-xs text-center text-zinc-400 mt-4">
                         Podrás editar esto más adelante.

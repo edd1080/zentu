@@ -1,8 +1,35 @@
 # Estado actual
-Fase activa: 5
-Bloque activo: Bloque 5.2 — Inteligencia y resúmenes
-Última sesión: 2026-03-19
+Fase activa: 6
+Bloque activo: Bloque 6.0 — Deploy a producción (Vercel)
+Última sesión: 2026-03-23
+Bloque anterior completado: Fase Intermedia — Rediseño UI completo ✅
 Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento ✅
+
+## Qué se construyó (sesión 2026-03-23 — Fase Intermedia: Rediseño UI)
+
+### Rediseño completo UI (bloques UI-0 → UI-10)
+
+**UI-DS/UI-0:** Design system global: DM Sans via `next/font/google`, `#3DC185` como primario universal en `tailwind.config.ts` (token `brand`), `@iconify/react` instalado, `Icon.tsx` wrapper, `globals.css` con scrollbar 4px, `slideUpFade` keyframe.
+
+**UI-1:** AppShell — Sidebar con `bg-[#F8F9FA]`, nav items activos con `bg-white shadow-sm ring-1`, Solar icons, `LogoutButton`, MobileNav actualizado, `PageHeader` creado como server component compartido.
+
+**UI-Splash:** `src/app/page.tsx` reemplazado por tutorial carousel de 3 pasos: "Respuestas 24/7" / "Aprende de tu negocio" / "Multiplica tus ventas". Dots navigator, "Siguiente"/"Omitir" → paso 3 muestra "Crear cuenta" / "Ya tengo cuenta". Extraído a `src/app/_components/SplashSteps.tsx` para cumplir regla 150 líneas.
+
+**UI-2/3/4/5:** `PageHeader` integrado en Home, Conversaciones (layout separado de filtros), Mi Agente (con acción Historial), Entrenar.
+
+**UI-6:** `agent/history/page.tsx` — sticky back-nav header con patrón `bg-white/80 backdrop-blur-md border-b border-slate-100` igual al de Intelligence.
+
+**UI-9:** Auth pages ya conformes con design system (`#3DC185`, `h-12`, Solar icons). Auth layout con blur decorativo y card flotante en desktop.
+
+**UI-10 (onboarding styling):** Migración completa de `emerald-*` → `#3DC185` en todos los componentes: m13, m14, m15, m16, completeness-bar, schedule-editor, tone-selector, topic-chip, industry-card, service-editor. Botones de acción normalizados a `h-12 rounded-xl` (eliminados `rounded-full py-4` en m13, m14, m15, m16).
+
+## Decisiones tomadas (Rediseño UI)
+
+- **PageHeader server component**: Sin `"use client"` para ser compatible con `dashboard/page.tsx` (server component). Funciona en server y client pages sin cambios.
+- **Conversations layout**: `PageHeader` separado de la sección de controles (search + tabs + filtros) para evitar que los elementos queden pegados al borde inferior del header. Sección de controles tiene `pt-4` de respiración.
+- **Botón circular send (m16 sandbox)**: Conserva `rounded-full` — es UI de chat tipo WhatsApp, no un action button de formulario. Excepción explícita a la regla `rounded-xl`.
+- **Chat input (m16)**: Conserva `rounded-full bg-zinc-100` — estética de input de mensajería, intencional.
+- **SplashSteps.tsx**: Extraído a `src/app/_components/` para que `page.tsx` quede en 66 líneas (cumple regla 150).
 
 ## Roadmap Extendido
 - Se integró el **Roadmap Post-MVP v1.0** (`docs/development-plan-2.md`) que añade las Fases 8 a 15 para la evolución del producto tras el MVP.
@@ -240,12 +267,10 @@ Bloque anterior completado: Bloque 5.1 — Instrucción rápida y entrenamiento 
 - Ninguno técnico.
 
 ## Próximo paso
-**FASE INTERMEDIA — Rediseño UI**
-- El usuario tiene archivos HTML/CSS con el nuevo diseño
-- Entregar archivos en `docs/redesign/` y abrir nueva sesión enfocada en frontend
-- Después del rediseño → **Fase 6 — Bloque 6.1: Migración a Meta producción.**
-- Salir de sandbox de Meta (App modo live)
-- Configurar dominio de producción en webhook de Meta
-- Crear y aprobar Message Templates de WhatsApp
-- Verificar Embedded Signup con App en modo live
-- Test end-to-end con número real de negocio
+**Fase 6 — Bloque 6.0: Deploy a producción (Vercel)**
+- Crear proyecto Vercel + conectar repo
+- Configurar env vars en Vercel Dashboard
+- Desplegar Edge Functions en Supabase prod
+- Actualizar webhook URL en Meta → dominio Vercel
+- Smoke test completo en prod
+- Luego: **Bloque 6.1** Migración Meta producción → número real de WhatsApp Business

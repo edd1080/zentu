@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, MessageCircle, ShieldCheck, Zap } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 
 export function M15WhatsappConnect() {
     const router = useRouter();
@@ -39,9 +39,9 @@ export function M15WhatsappConnect() {
 
                 <div className="flex justify-center mb-2">
                     <div className="relative">
-                        <div className="absolute inset-0 bg-emerald-100 rounded-full blur-xl animate-pulse" />
-                        <div className="relative w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center transform rotate-3 shadow-lg border border-emerald-400">
-                            <MessageCircle className="w-10 h-10 text-white fill-white" />
+                        <div className="absolute inset-0 bg-[#3DC185]/20 rounded-full blur-xl animate-pulse" />
+                        <div className="relative w-20 h-20 bg-[#3DC185] rounded-3xl flex items-center justify-center transform rotate-3 shadow-lg border border-[#3DC185]/60">
+                            <Icon name="solar:chat-round-line-bold" size={40} className="text-white" />
                         </div>
                     </div>
                 </div>
@@ -55,14 +55,14 @@ export function M15WhatsappConnect() {
 
                 <div className="flex flex-col gap-4 text-left bg-zinc-50 p-6 rounded-2xl border border-zinc-100">
                     <div className="flex gap-3">
-                        <div className="shrink-0 mt-0.5"><Zap className="w-5 h-5 text-emerald-500" /></div>
+                        <div className="shrink-0 mt-0.5"><Icon name="solar:bolt-linear" size={20} className="text-[#3DC185]" /></div>
                         <div>
                             <p className="text-sm font-semibold text-zinc-900">Respuestas al instante</p>
                             <p className="text-xs text-zinc-500 mt-0.5">Atiende 24/7 sin hacer esperar a los clientes.</p>
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        <div className="shrink-0 mt-0.5"><ShieldCheck className="w-5 h-5 text-emerald-500" /></div>
+                        <div className="shrink-0 mt-0.5"><Icon name="solar:shield-check-linear" size={20} className="text-[#3DC185]" /></div>
                         <div>
                             <p className="text-sm font-semibold text-zinc-900">Meta API Oficial</p>
                             <p className="text-xs text-zinc-500 mt-0.5">Proceso seguro validado y cifrado por Meta.</p>
@@ -79,17 +79,17 @@ export function M15WhatsappConnect() {
                     <button
                         onClick={() => handleConnect(true)}
                         disabled={isConnecting || isSkipping}
-                        className="w-full flex items-center justify-center py-4 px-6 rounded-full bg-emerald-600 text-white font-medium shadow-sm transition-all focus:ring-4 focus:ring-emerald-600/20 disabled:opacity-50 hover:bg-emerald-700 active:scale-[0.98]"
+                        className="w-full h-12 flex items-center justify-center rounded-xl bg-[#3DC185] text-white font-medium shadow-sm transition-all disabled:opacity-50 hover:bg-[#32a873] active:scale-[0.98]"
                     >
-                        {isConnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Conectar WhatsApp (Dev Simulator)"}
+                        {isConnecting ? <Icon name="solar:refresh-linear" size={20} className="animate-spin" /> : "Conectar WhatsApp (Dev Simulator)"}
                     </button>
 
                     <button
                         onClick={() => handleConnect(false)}
                         disabled={isConnecting || isSkipping}
-                        className="w-full flex items-center justify-center py-4 px-6 rounded-full bg-white text-zinc-600 font-medium shadow-sm border border-zinc-200 transition-all focus:ring-4 focus:ring-zinc-100 disabled:opacity-50 hover:bg-zinc-50 active:scale-[0.98]"
+                        className="w-full h-12 flex items-center justify-center rounded-xl bg-white text-zinc-700 font-medium shadow-sm border border-zinc-200 transition-all disabled:opacity-50 hover:bg-zinc-50 active:scale-[0.98]"
                     >
-                        {isSkipping ? <Loader2 className="w-5 h-5 animate-spin" /> : "Conectar Después"}
+                        {isSkipping ? <Icon name="solar:refresh-linear" size={20} className="animate-spin" /> : "Conectar Después"}
                     </button>
 
                     <p className="text-xs text-center text-zinc-400 mt-2 px-6">

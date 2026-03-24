@@ -1,22 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Search, Brain, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
+import { Icon } from "@/components/ui/Icon";
 import { HistoryCard, type HistoryItem } from "@/components/dashboard/HistoryCard";
 import { DeactivateModal } from "@/components/dashboard/DeactivateModal";
 
-type FilterType = 'all' | 'quick_instruct' | 'voice_note' | 'image_ocr';
-
-const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
-  { value: 'all',            label: 'Todos'  },
-  { value: 'quick_instruct', label: 'Texto'  },
-  { value: 'voice_note',     label: 'Voz'    },
-  { value: 'image_ocr',      label: 'Imagen' },
+type FilterType = "all" | "quick_instruct" | "voice_note" | "image_ocr";
+const FILTERS: { value: FilterType; label: string }[] = [
+  { value: "all",            label: "Todos"  },
+  { value: "quick_instruct", label: "Texto"  },
+  { value: "voice_note",     label: "Voz"    },
+  { value: "image_ocr",      label: "Imagen" },
 ];
+const fmtDate = (d: string) => new Date(d).toLocaleDateString("es-GT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 export default function TrainingHistoryPage() {
   const [history, setHistory] = React.useState<HistoryItem[]>([]);
@@ -24,128 +24,93 @@ export default function TrainingHistoryPage() {
   const [loading, setLoading] = React.useState(true);
   const [toggling, setToggling] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [filter, setFilter] = React.useState<FilterType>('all');
+  const [filter, setFilter] = React.useState<FilterType>("all");
   const [confirmItem, setConfirmItem] = React.useState<HistoryItem | null>(null);
   const { toast } = useToast();
   const supabase = createClient();
 
   React.useEffect(() => {
-    async function loadHistory() {
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: biz } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single();
+      const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", user.id).single();
       if (!biz) return;
       setBusinessId(biz.id);
-
-      const { data: items, error } = await supabase
-        .from('knowledge_items')
-        .select('id, content, layer, active, created_at, topic:competency_topics(name), source:knowledge_sources(type)')
-        .eq('business_id', biz.id)
-        .order('created_at', { ascending: false });
-
-      if (error) { console.error("Error loading history:", error); setLoading(false); return; }
-
-      setHistory((items || []).map((item: any) => ({
-        id: item.id, content: item.content, topic_name: item.topic?.name || 'General',
-        layer: item.layer, source_type: item.source?.type || 'quick_instruct',
-        created_at: item.created_at, active: item.active,
-      })));
+      const { data: items } = await supabase.from("knowledge_items")
+        .select("id, content, layer, active, created_at, topic:competency_topics(name), source:knowledge_sources(type)")
+        .eq("business_id", biz.id).order("created_at", { ascending: false });
+      setHistory((items || []).map((item: any) => ({ id: item.id, content: item.content, topic_name: item.topic?.name || "General", layer: item.layer, source_type: item.source?.type || "quick_instruct", created_at: item.created_at, active: item.active })));
       setLoading(false);
-    }
-    loadHistory();
+    })();
   }, []);
 
-  const requestToggle = (item: HistoryItem) => {
-    item.active ? setConfirmItem(item) : executeToggle(item, true);
-  };
+  const requestToggle = (item: HistoryItem) => item.active ? setConfirmItem(item) : executeToggle(item, true);
 
   const executeToggle = async (item: HistoryItem, newActive: boolean) => {
-    setConfirmItem(null);
-    setToggling(item.id);
+    setConfirmItem(null); setToggling(item.id);
     try {
-      const { error } = await supabase.from('knowledge_items').update({ active: newActive }).eq('id', item.id);
+      const { error } = await supabase.from("knowledge_items").update({ active: newActive }).eq("id", item.id);
       if (error) throw error;
       if (businessId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.rpc as any)('refresh_competency_coverage', { p_business_id: businessId });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from('agent_context_cache').delete().eq('business_id', businessId);
+        await (supabase.rpc as any)("refresh_competency_coverage", { p_business_id: businessId });
+        await (supabase as any).from("agent_context_cache").delete().eq("business_id", businessId);
       }
       setHistory(prev => prev.map(h => h.id === item.id ? { ...h, active: newActive } : h));
-      toast({ type: newActive ? "success" : "info", message: newActive ? "Instrucción reactivada." : "Instrucción desactivada. El agente ya no usará esta información." });
+      toast({ type: newActive ? "success" : "info", message: newActive ? "Instrucción reactivada." : "Instrucción desactivada." });
     } catch (err: any) {
-      toast({ type: "error", message: "No se pudo actualizar: " + err.message });
-    } finally {
-      setToggling(null);
-    }
+      toast({ type: "error", message: "Error: " + err.message });
+    } finally { setToggling(null); }
   };
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
   const filtered = history.filter(h => {
-    const matchesSearch = !searchQuery.trim() ||
-      h.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (h.topic_name || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch && (filter === 'all' || h.source_type === filter);
+    const q = searchQuery.trim().toLowerCase();
+    return (!q || h.content.toLowerCase().includes(q) || (h.topic_name || "").toLowerCase().includes(q)) && (filter === "all" || h.source_type === filter);
   });
 
   return (
-    <div className="flex flex-col h-full w-full bg-(--surface-background) overflow-y-auto">
-      <div className="w-full max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6 pb-32">
-        <div className="flex flex-col gap-4">
-          <Link href="/dashboard/agent" className="text-sm font-medium text-(--color-primary-700) flex items-center hover:underline w-fit">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Volver a Tu Agente
+    <div className="flex flex-col h-full w-full bg-[#FDFDFD] overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-100 px-5 py-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/agent" className="p-1.5 -ml-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+            <Icon name="solar:arrow-left-linear" size={20} />
           </Link>
-          <div>
-            <h1 className="font-display italic text-3xl text-(--text-primary)">Historial de aprendizaje</h1>
-            <p className="text-(--text-secondary) text-sm mt-1">Todo lo que le has enseñado a tu agente. Desactiva cualquier instrucción que ya no sea válida.</p>
-          </div>
+          <h1 className="text-base font-semibold tracking-tight text-slate-900">Historial de aprendizaje</h1>
         </div>
+      </div>
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 flex flex-col gap-5 pb-20">
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-(--text-tertiary)" />
+        <div className="relative group">
+          <Icon name="solar:magnifer-linear" size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#3DC185] transition-colors" />
           <input type="text" placeholder="Buscar instrucciones o temas..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white border border-(--surface-border-strong) rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-(--color-primary-700) shadow-sm" />
+            className="w-full pl-10 pr-4 h-12 bg-white border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-[#3DC185]/10 focus:border-[#3DC185]/60 shadow-sm transition-all" />
         </div>
 
-        <div className="flex bg-(--surface-muted) rounded-xl p-1 gap-0.5">
-          {FILTER_OPTIONS.map(opt => (
-            <button key={opt.value} type="button" onClick={() => setFilter(opt.value)}
-              className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all", filter === opt.value ? "bg-white text-(--text-primary) shadow-sm" : "text-(--text-tertiary) hover:text-(--text-secondary)")}>
-              {opt.label}
+        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
+          {FILTERS.map(f => (
+            <button key={f.value} onClick={() => setFilter(f.value)} className={cn("px-3 py-1.5 rounded-full text-xs font-medium shrink-0 border transition-colors", filter === f.value ? "bg-slate-800 text-white border-slate-800" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}>
+              {f.label}
             </button>
           ))}
         </div>
 
-        {loading && (
-          <div className="flex items-center justify-center py-16 gap-3">
-            <Loader2 className="h-6 w-6 animate-spin text-(--color-primary-600)" />
-            <p className="text-sm text-(--text-tertiary)">Cargando historial...</p>
-          </div>
-        )}
+        {loading && <div className="flex items-center justify-center py-16 gap-2"><Icon name="solar:refresh-linear" size={20} className="text-slate-300 animate-spin" /><span className="text-sm text-slate-400">Cargando historial...</span></div>}
 
         {!loading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 bg-white border border-dashed border-(--surface-border) rounded-2xl">
-            <Brain className="h-8 w-8 text-(--text-disabled)" />
-            <p className="text-sm text-(--text-tertiary) text-center px-4">
-              {searchQuery || filter !== 'all' ? "No se encontraron resultados para este filtro." : "Tu agente aún no ha aprendido nada. ¡Enséñale algo desde Instrucción rápida!"}
+          <div className="flex flex-col items-center justify-center py-16 gap-3 bg-white border border-dashed border-slate-200 rounded-2xl">
+            <Icon name="solar:brain-linear" size={32} className="text-slate-200" />
+            <p className="text-sm text-slate-400 text-center max-w-xs">
+              {searchQuery || filter !== "all" ? "No se encontraron resultados para este filtro." : "Tu agente aún no ha aprendido nada. ¡Enséñale algo nuevo!"}
             </p>
           </div>
         )}
 
-        {!loading && (
+        {!loading && filtered.length > 0 && (
           <div className="flex flex-col gap-3">
-            {filtered.map(item => (
-              <HistoryCard key={item.id} item={item} toggling={toggling === item.id} onToggle={requestToggle} formatDate={formatDate} />
-            ))}
+            {filtered.map(item => <HistoryCard key={item.id} item={item} toggling={toggling === item.id} onToggle={requestToggle} formatDate={fmtDate} />)}
           </div>
         )}
       </div>
-
-      {confirmItem && (
-        <DeactivateModal item={confirmItem} onConfirm={() => executeToggle(confirmItem, false)} onCancel={() => setConfirmItem(null)} />
-      )}
+      {confirmItem && <DeactivateModal item={confirmItem} onConfirm={() => executeToggle(confirmItem, false)} onCancel={() => setConfirmItem(null)} />}
     </div>
   );
 }

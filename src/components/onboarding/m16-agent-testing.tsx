@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Send, Bot, User, CheckCircle2 } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 
 type Message = {
     id: string;
@@ -95,8 +95,8 @@ export function M16AgentTesting({ businessName, industry }: { businessName: stri
             <div className="flex-1 px-4 max-w-lg mx-auto w-full flex flex-col gap-4">
                 {messages.map(m => (
                     <div key={m.id} className={`flex gap-3 max-w-[85%] ${m.role === "user" ? "self-end flex-row-reverse" : "self-start"}`}>
-                        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${m.role === "user" ? "bg-zinc-200" : "bg-emerald-100"}`}>
-                            {m.role === "user" ? <User className="w-4 h-4 text-zinc-600" /> : <Bot className="w-5 h-5 text-emerald-600" />}
+                        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${m.role === "user" ? "bg-zinc-200" : "bg-[#3DC185]/10"}`}>
+                            {m.role === "user" ? <Icon name="solar:user-linear" size={16} className="text-zinc-600" /> : <Icon name="solar:cpu-linear" size={20} className="text-[#3DC185]" />}
                         </div>
                         <div className={`p-3 rounded-2xl text-sm ${m.role === "user" ? "bg-zinc-900 text-white rounded-tr-sm" : "bg-white border text-zinc-800 rounded-tl-sm shadow-sm"}`}>
                             {m.content}
@@ -106,8 +106,8 @@ export function M16AgentTesting({ businessName, industry }: { businessName: stri
 
                 {isTyping && (
                     <div className="flex gap-3 max-w-[85%] self-start">
-                        <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                            <Bot className="w-5 h-5 text-emerald-600" />
+                        <div className="shrink-0 w-8 h-8 rounded-full bg-[#3DC185]/10 flex items-center justify-center">
+                            <Icon name="solar:cpu-linear" size={20} className="text-[#3DC185]" />
                         </div>
                         <div className="p-4 rounded-2xl bg-white border rounded-tl-sm shadow-sm flex gap-1 items-center">
                             <div className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce" />
@@ -129,28 +129,28 @@ export function M16AgentTesting({ businessName, industry }: { businessName: stri
                             onChange={e => setInput(e.target.value)}
                             onKeyDown={e => e.key === "Enter" && handleSend()}
                             placeholder="Escribe un mensaje de prueba..."
-                            className="flex-1 px-4 py-3 bg-zinc-100 border-transparent rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white focus:border-emerald-200 transition-all"
+                            className="flex-1 px-4 py-3 bg-zinc-100 border-transparent rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#3DC185]/20 focus:bg-white focus:border-[#3DC185]/30 transition-all"
                             disabled={isTyping || isActivating}
                         />
                         <button
                             onClick={handleSend}
                             disabled={!input.trim() || isTyping || isActivating}
-                            className="shrink-0 w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm disabled:opacity-50 transition-transform active:scale-95"
+                            className="shrink-0 w-11 h-11 rounded-full bg-[#3DC185] text-white flex items-center justify-center shadow-sm disabled:opacity-50 transition-transform hover:bg-[#32a873] active:scale-95"
                         >
-                            <Send className="w-5 h-5 ml-[-2px]" />
+                            <Icon name="solar:plain-2-linear" size={20} />
                         </button>
                     </div>
 
                     <button
                         onClick={handleActivate}
                         disabled={isActivating || messages.length < 2 || isTyping}
-                        className="w-full mt-2 flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-zinc-900 text-white font-medium shadow-sm transition-all focus:ring-4 focus:ring-zinc-900/20 disabled:opacity-40 hover:bg-zinc-800 active:scale-[0.98]"
+                        className="w-full mt-2 h-12 flex items-center justify-center gap-2 rounded-xl bg-zinc-900 text-white font-medium shadow-sm transition-all disabled:opacity-40 hover:bg-zinc-800 active:scale-[0.98]"
                     >
                         {isActivating ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <Icon name="solar:refresh-linear" size={20} className="animate-spin" />
                         ) : (
                             <>
-                                <CheckCircle2 className="w-5 h-5" />
+                                <Icon name="solar:check-circle-linear" size={20} />
                                 <span>Activar Agente para {businessName}</span>
                             </>
                         )}
