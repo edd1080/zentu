@@ -1,14 +1,14 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { QuickInstruct } from "@/components/dashboard/QuickInstruct";
 import { CompetencyMap } from "@/components/dashboard/CompetencyMap";
 import { HealthCard } from "@/components/dashboard/HealthCard";
-import { Button } from "@/components/ui/Button";
-import { Brain, History, Target, Loader2, BarChart2, ChevronRight } from "lucide-react";
-import Link from "next/link";
+import { Icon } from "@/components/ui/Icon";
 import { createClient } from "@/lib/supabase/client";
 import type { Topic } from "@/components/dashboard/TopicCard";
+import { PageHeader } from "@/components/dashboard/PageHeader";
 
 export default function AgentPage() {
   const [topics, setTopics] = React.useState<Topic[]>([]);
@@ -16,145 +16,104 @@ export default function AgentPage() {
   const [loading, setLoading] = React.useState(true);
   const supabase = createClient();
 
+  const loadTopics = React.useCallback(async (bizId: string) => {
+    const { data } = await supabase.from("competency_topics")
+      .select("id, name, status, coverage_percentage, description, is_default")
+      .eq("business_id", bizId).order("is_default", { ascending: false }).order("name", { ascending: true });
+    if (!data) return;
+    // Single batch query instead of N+1 per topic
+    const { data: knowledgeRows } = await supabase.from("knowledge_items")
+      .select("topic_id")
+      .in("topic_id", data.map((t: any) => t.id))
+      .eq("active", true);
+    const countMap = (knowledgeRows || []).reduce((acc: Record<string, number>, row: any) => {
+      acc[row.topic_id] = (acc[row.topic_id] || 0) + 1;
+      return acc;
+    }, {});
+    const withCounts: Topic[] = data.map((t: any) => ({ ...t, knowledge_count: countMap[t.id] || 0 }));
+    setTopics(prev => withCounts.map(t => ({ ...t, items: prev.find(p => p.id === t.id)?.items })));
+  }, [supabase]);
+
   React.useEffect(() => {
-    async function init() {
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: biz } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single();
+      const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", user.id).single();
       if (!biz) return;
       setBusinessId(biz.id);
       await loadTopics(biz.id);
       setLoading(false);
-    }
-    init();
+    })();
   }, []);
 
   React.useEffect(() => {
     if (!businessId) return;
-    const channel = supabase.channel('competency-realtime').on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'competency_topics', filter: `business_id=eq.${businessId}` },
+    const ch = supabase.channel("competency-realtime").on("postgres_changes",
+      { event: "UPDATE", schema: "public", table: "competency_topics", filter: `business_id=eq.${businessId}` },
       async (payload: any) => {
-        const { count } = await supabase.from('knowledge_items')
-          .select('id', { count: 'exact', head: true })
-          .eq('topic_id', payload.new.id).eq('active', true);
-        setTopics(prev => prev.map(t => t.id === payload.new.id
-          ? { ...t, coverage_percentage: payload.new.coverage_percentage, status: payload.new.status, knowledge_count: count ?? t.knowledge_count }
-          : t
-        ));
+        const { count } = await supabase.from("knowledge_items").select("id", { count: "exact", head: true }).eq("topic_id", payload.new.id).eq("active", true);
+        setTopics(prev => prev.map(t => t.id === payload.new.id ? { ...t, coverage_percentage: payload.new.coverage_percentage, status: payload.new.status, knowledge_count: count ?? t.knowledge_count } : t));
       }
     ).subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(ch); };
   }, [businessId]);
 
-  async function loadTopics(bizId: string) {
-    const { data: topicsData } = await supabase
-      .from('competency_topics').select('id, name, status, coverage_percentage, description, is_default')
-      .eq('business_id', bizId).order('is_default', { ascending: false }).order('name', { ascending: true });
-    if (!topicsData) return;
-    const withCounts: Topic[] = await Promise.all(topicsData.map(async (t: any) => {
-      const { count } = await supabase.from('knowledge_items')
-        .select('id', { count: 'exact', head: true }).eq('topic_id', t.id).eq('active', true);
-      return { ...t, knowledge_count: count || 0 };
-    }));
-    setTopics(prev => withCounts.map(t => ({ ...t, items: prev.find(p => p.id === t.id)?.items })));
-  }
-
-  async function handleTopicClick(topicId: string) {
-    if (!topics.find(t => t.id === topicId)) return;
-    const { data } = await supabase.from('knowledge_items')
-      .select('id, content, layer, created_at').eq('topic_id', topicId).eq('active', true)
-      .order('created_at', { ascending: false });
+  const handleTopicClick = async (topicId: string) => {
+    const { data } = await supabase.from("knowledge_items").select("id, content, layer, created_at").eq("topic_id", topicId).eq("active", true).order("created_at", { ascending: false });
     setTopics(prev => prev.map(t => t.id === topicId ? { ...t, items: data || [] } : t));
-  }
+  };
 
-  // Health score: binary — how many CORE topics have ≥1 instruction
   const coreTopics = topics.filter(t => t.is_default);
   const coveredCore = coreTopics.filter(t => t.knowledge_count > 0).length;
-  const healthScore = coreTopics.length > 0
-    ? Math.round((coveredCore / coreTopics.length) * 100)
-    : 0;
-  const healthLevel = healthScore >= 80 ? 'Excelente' : healthScore >= 50 ? 'Óptimo' : 'En Desarrollo';
+  const healthScore = coreTopics.length > 0 ? Math.round((coveredCore / coreTopics.length) * 100) : 0;
+  const healthLevel = healthScore >= 80 ? "Excelente" : healthScore >= 50 ? "Óptimo" : "En Desarrollo";
 
   return (
-    <div className="flex flex-col h-full w-full bg-(--surface-background) overflow-y-auto">
-      <div className="w-full max-w-3xl mx-auto px-4 py-8 flex flex-col gap-8 pb-32">
+    <div className="flex flex-col h-full w-full bg-[#F8F9FA] overflow-y-auto">
+      <PageHeader title="Mi Agente" action={
+        <Link href="/dashboard/agent/history" className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl px-3 h-9 transition-colors shadow-sm">
+          <Icon name="solar:history-linear" size={15} />
+          Historial
+        </Link>
+      } />
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6 pb-20">
 
-        {/* Header */}
-        <header className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h1 className="font-display italic text-3xl text-(--text-primary)">Tu Agente</h1>
-            <Link href="/dashboard/agent/history">
-              <Button variant="secondary" className="h-10 min-h-0 text-sm">
-                <History className="h-4 w-4 mr-2" />
-                Historial
-              </Button>
-            </Link>
-          </div>
-          <p className="text-(--text-secondary) text-sm max-w-md">
-            Gestiona el conocimiento y comportamiento de tu agente de inteligencia artificial.
-          </p>
-        </header>
+        <HealthCard healthScore={healthScore} healthLevel={healthLevel} coveredCore={coveredCore} totalCore={coreTopics.length} />
 
-        <HealthCard
-          healthScore={healthScore}
-          healthLevel={healthLevel}
-          coveredCore={coveredCore}
-          totalCore={coreTopics.length}
-        />
-
-        {/* Quick Instruct */}
-        <section className="flex flex-col gap-4">
+        <section className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-(--color-primary-700)" />
-            <h2 className="font-semibold text-(--text-primary)">Instrucción rápida</h2>
+            <Icon name="solar:pen-new-round-linear" size={16} className="text-[#3DC185]" />
+            <h2 className="text-sm font-semibold text-slate-900">Enseñar algo nuevo</h2>
           </div>
-          <QuickInstruct
-            businessId={businessId || undefined}
-            onSuccess={() => businessId && loadTopics(businessId)}
-          />
-          <p className="text-[11px] text-(--text-tertiary) px-1 italic">
-            Tip: Puedes enviar imágenes del menú o PDFs de servicios para que AGENTI los aprenda.
-          </p>
+          <QuickInstruct businessId={businessId || undefined} onSuccess={() => businessId && loadTopics(businessId)} />
         </section>
 
-        {/* Areas del negocio */}
-        <section className="flex flex-col gap-4">
+        <section className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-(--color-primary-700)" />
-            <h2 className="font-semibold text-(--text-primary)">Áreas del negocio</h2>
+            <Icon name="solar:map-linear" size={16} className="text-[#3DC185]" />
+            <h2 className="text-sm font-semibold text-slate-900">Mapa de conocimiento</h2>
           </div>
-
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-(--color-primary-600)" />
+              <Icon name="solar:refresh-linear" size={24} className="text-slate-300 animate-spin" />
             </div>
           ) : (
-            <CompetencyMap
-              topics={topics}
-              onTopicClick={handleTopicClick}
-            />
+            <CompetencyMap topics={topics} onTopicClick={handleTopicClick} />
           )}
         </section>
 
-        {/* Inteligencia — acceso a M5.1 + M5.2 */}
-        <section className="pb-2">
-          <Link
-            href="/dashboard/agent/intelligence"
-            className="flex items-center justify-between px-4 py-3 bg-white border border-(--surface-border) rounded-xl hover:border-(--color-primary-700) hover:bg-emerald-50 transition-colors group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                <BarChart2 className="h-4 w-4 text-emerald-700" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-(--text-primary)">Inteligencia</p>
-                <p className="text-xs text-(--text-secondary)">Actividad del agente y oportunidades de mejora</p>
-              </div>
+        <Link href="/dashboard/agent/intelligence" className="flex items-center justify-between px-4 py-3.5 bg-white border border-slate-200/80 rounded-2xl hover:border-[#3DC185]/40 hover:bg-emerald-50/30 transition-colors group shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <Icon name="solar:chart-2-linear" size={17} className="text-emerald-700" />
             </div>
-            <ChevronRight className="h-4 w-4 text-(--text-tertiary) group-hover:text-(--color-primary-700) shrink-0" />
-          </Link>
-        </section>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Métricas e Inteligencia</p>
+              <p className="text-xs text-slate-500">Actividad del agente y oportunidades de mejora</p>
+            </div>
+          </div>
+          <Icon name="solar:alt-arrow-right-linear" size={16} className="text-slate-400 group-hover:text-[#3DC185] transition-colors shrink-0" />
+        </Link>
 
       </div>
     </div>

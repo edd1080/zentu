@@ -38,7 +38,7 @@ export function NavCountsProvider({ children }: { children: React.ReactNode }) {
   const { data: counts = { conversations: 0, agent: 0 } } = useQuery({
     queryKey: ["nav-counts"],
     queryFn: fetchNavCounts,
-    staleTime: 20_000,
+    staleTime: 120_000,
   });
 
   return (
